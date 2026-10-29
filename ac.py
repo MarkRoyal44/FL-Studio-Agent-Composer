@@ -28,6 +28,10 @@ def send(action, params=None, timeout=5.0):
             with open(RESPONSE, encoding="utf-8") as f:
                 r = json.load(f)
             if r.get("id") == cid:
+                try:
+                    os.remove(COMMAND)  # FL's Python may not be allowed to delete it
+                except OSError:
+                    pass
                 return r
         except (OSError, ValueError):
             pass
@@ -40,6 +44,7 @@ def send(action, params=None, timeout=5.0):
 
 
 def status():
+    os.makedirs(BRIDGE, exist_ok=True)  # FL's Python can't mkdir, so the folder is made from this side
     try:
         with open(STATUS, encoding="utf-8") as f:
             s = json.load(f)

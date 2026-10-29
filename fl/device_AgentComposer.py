@@ -19,21 +19,36 @@ What changed from the fork:
 Only exact action names run. Nothing in a command is ever evaluated as code.
 """
 
-import json
-import os
-import sys
-import time
+# Load log: if an import fails, FL shows the error only in its script window,
+# which nobody can see from the phone. This file says how far loading got.
+_LOAD_LOG = None
+try:
+    import os
+    _LOAD_LOG = os.path.join(os.environ.get("USERPROFILE", "~"), "Documents", "Image-Line", "FL Studio",
+                             "Settings", "Hardware", "AgentComposer", "load.txt")
+    with open(_LOAD_LOG, "w", encoding="utf-8") as _f:
+        _f.write("module started\n")
+    import json
+    import sys
+    import time
 
-import arrangement
-import channels
-import general
-import midi
-import mixer
-import patterns
-import playlist
-import plugins
-import transport
-import ui
+    import arrangement
+    import channels
+    import general
+    import midi
+    import mixer
+    import patterns
+    import playlist
+    import plugins
+    import transport
+    import ui
+    with open(_LOAD_LOG, "a", encoding="utf-8") as _f:
+        _f.write("imports ok\n")
+except Exception as _e:
+    if _LOAD_LOG:
+        with open(_LOAD_LOG, "a", encoding="utf-8") as _f:
+            _f.write("import failed: %r\n" % (_e,))
+    raise
 
 
 def _get_script_dir():
@@ -61,12 +76,19 @@ def _write_json(path, data):
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
-    os.replace(tmp, path)
+    try:
+        os.replace(tmp, path)
+    except Exception:
+        # FL's Python may block renames like it blocks mkdir: write in place instead.
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
 
 
 def _probe_stdlib():
     out = {"python": sys.version.split()[0]}
     for name in ("socket", "threading", "subprocess", "sqlite3", "ctypes"):
+        with open(_LOAD_LOG, "a", encoding="utf-8") as f:
+            f.write("probing %s\n" % name)
         try:
             __import__(name)
             out[name] = "ok"
@@ -98,9 +120,22 @@ def _safe(fn, *args):
 
 def OnInit():
     global _probe
-    os.makedirs(BRIDGE_DIR, exist_ok=True)
-    _probe = _probe_stdlib()
-    _heartbeat()
+    def log(s):
+        with open(_LOAD_LOG, "a", encoding="utf-8") as f:
+            f.write(s + "\n")
+    log("OnInit, bridge %s" % BRIDGE_DIR)
+    try:
+        # FL's Python refuses os.mkdir (SystemError), so the bridge folder is made from outside by ac.py.
+        if not os.path.isdir(BRIDGE_DIR):
+            log("bridge folder missing: run `py ac.py status` once to create it")
+        log("bridge folder ok")
+        _probe = _probe_stdlib()
+        log("probe %r" % (_probe,))
+        _heartbeat()
+        log("heartbeat ok")
+    except Exception as e:
+        log("OnInit failed: %r" % (e,))
+        raise
     print("Agent Composer loaded. Bridge: %s" % BRIDGE_DIR)
 
 
@@ -252,7 +287,7 @@ def handle_tempo_set(params):
         return {"error": "Tempo must be between 10 and 522 BPM."}
     def go():
         general.processRECEvent(midi.REC_Tempo, int(round(bpm * 1000)), midi.REC_Control | midi.REC_UpdateControl)
-        return {"requested_bpm": bpm, "tempo_bpm_now": _safe(mixer.getCurrentTempo, 1) / 1000.0, "experimental": True}
+        return {"requested_bpm": bpm, "tempo_bpm_now": _safe(mixer.getCurrentTempo, 1), "experimental": True}
     return _undo_step("tempo", go)
 
 
