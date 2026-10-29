@@ -26,7 +26,7 @@ import minibrain  # noqa: E402
 import licensing  # noqa: E402
 from ac import send, status  # noqa: E402
 
-VERSION = "0.7.0"
+VERSION = "0.7.1"
 UI = os.path.join(ROOT, "app", "ui")
 PORT = int(os.environ.get("AGENT_COMPOSER_PORT", "47800"))
 

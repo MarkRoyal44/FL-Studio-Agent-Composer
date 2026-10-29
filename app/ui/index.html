@@ -464,8 +464,8 @@ function approvalCard(m,a,onAnswer){const c=el(`<div class="approve"><div class=
   <div class="row"><button class="btn go">Approve</button><button class="btn">Not that</button></div></div>`);
   m.insertBefore(c,m.querySelector(".typing")||m.querySelector(".acts"));sfx.ask();scroll();
   const [y,n]=c.querySelectorAll("button");
-  y.onclick=()=>{c.classList.add("done");c.querySelector(".q").textContent="Approved";sfx.ok();onAnswer(true)};
-  n.onclick=()=>{c.classList.add("done");c.querySelector(".q").textContent="Skipped";sfx.no();onAnswer(false)};
+  const answer=ok=>{if(c.classList.contains("done"))return;c.classList.add("done");c.querySelector(".row").remove();c.querySelector(".q").textContent=ok?"Approved":"Skipped";(ok?sfx.ok:sfx.no)();onAnswer(ok)};
+  y.onclick=()=>answer(true);n.onclick=()=>answer(false);
   return c}
 
 /* ---------- send ---------- */

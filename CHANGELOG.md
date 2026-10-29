@@ -2,6 +2,10 @@
 
 All notable changes to Agent Composer. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [0.7.1] - 2026-10-29
+### Fixed
+- Clicking Approve twice on a change card no longer garbles the agent's reply. Cards answer once and drop their buttons.
+
 ## [0.7.0] - 2026-10-29
 ### Added
 - **A real FL Studio plugin.** `Agent Composer.clap` is a CLAP generator, so it shows up in FL's **Add** menu and Channel rack. Its plugin window is the chat itself (an embedded WebView2), and it starts the app if it isn't running. It makes no sound. Built in Rust with nih-plug (`plugin/`).
