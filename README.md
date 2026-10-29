@@ -1,4 +1,4 @@
-# Agent Composer
+# FL Studio Agent Composer
 
 **Talk to your FL Studio project.** Agent Composer is a chat window that sits next to FL Studio. You ask for a kick pattern, a tempo change, a melody or a look at your plugins, and an AI agent does it inside the open project. It asks first, and every change is one undo step.
 
@@ -31,11 +31,11 @@ You need:
 3. **[uv](https://docs.astral.sh/uv/)** and **Python 3.10+**.
 4. **A virtual MIDI port** so FL loads the script, for example [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) with a port named `loopMIDI Port`.
 
-Then download it: **[latest release](https://github.com/MarkRoyal44/agent-composer/releases/latest)** (Source code zip), or clone it:
+Then download it: **[latest release](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/releases/latest)** (Source code zip), or clone it:
 
 ```powershell
-git clone https://github.com/MarkRoyal44/agent-composer.git
-cd agent-composer
+git clone https://github.com/MarkRoyal44/FL-Studio-Agent-Composer.git
+cd FL-Studio-Agent-Composer
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -50,7 +50,7 @@ To remove it: `powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall`.
 The same tools work in any Claude Code session:
 
 ```bash
-claude mcp add agent-composer --scope user -- uv run --script /path/to/agent-composer/mcp_server.py
+claude mcp add agent-composer --scope user -- uv run --script /path/to/FL-Studio-Agent-Composer/mcp_server.py
 ```
 
 There, Claude Code's own permission prompts do the asking.
@@ -85,4 +85,4 @@ More detail: [WHITEPAPER.md](WHITEPAPER.md) · [docs/ARCHITECTURE.md](docs/ARCHI
 
 [MIT](LICENSE). Fork it, change it, ship your own. The in-FL script started as a fork of [fl-studio-mcp](https://github.com/karl-andres/fl-studio-mcp) (MIT).
 
-*Agent Composer is an independent project. It isn't affiliated with or endorsed by Image-Line. FL Studio is a trademark of Image-Line Software.*
+*FL Studio Agent Composer is an unofficial, independent project. It isn't affiliated with or endorsed by Image-Line. FL Studio is a trademark of Image-Line Software.*
