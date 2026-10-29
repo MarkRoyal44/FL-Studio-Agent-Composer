@@ -14,6 +14,7 @@ DEFAULTS = {
     "allow_save": False,
     "model": "opus",
     "brain": "claude-code",
+    "brain_models": {},
     "read_aloud": False,
     "sounds": True,
     "voice_server": "",

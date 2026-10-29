@@ -3,8 +3,9 @@
   python app/server.py            start and open the window
   python app/server.py --no-open  start only (then visit the printed address)
 
-Standard library only. Claude Code does the thinking; the agent-composer MCP server
-(mcp_server.py) is the only set of tools it gets, so it can touch FL and nothing else.
+Standard library only. A brain (Claude Code, Codex, OpenCode, DeepSeek, a local model or your own,
+see brains.py) does the thinking; the agent-composer MCP server (mcp_server.py) is the only set of
+tools it gets, so it can touch FL and nothing else.
 """
 import json
 import os
@@ -12,150 +13,33 @@ import shutil
 import subprocess
 import sys
 import threading
-import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "app"))
 import home  # noqa: E402
+import brains  # noqa: E402
 from ac import send, status  # noqa: E402
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 UI = os.path.join(ROOT, "app", "ui")
 PORT = int(os.environ.get("AGENT_COMPOSER_PORT", "47800"))
-TOOL_PREFIX = "mcp__agent-composer__"
-
-PERSONA = """You are Agent Composer, a music-production assistant living inside the person's FL Studio.
-You act on the open project only through your agent-composer tools.
-- Call get_project_snapshot before changing anything, and after, to confirm.
-- Keep replies short, warm and plain. Talk like a producer in the room, not a manual.
-- Each change is one undo step; offer `undo` when something lands wrong.
-- Notes for melodies, chords and basslines go through write_notes (beats: 1 = a quarter note).
-- The VST dock is list_plugins / get_plugin_params / set_plugin_param / change_preset / park_plugin.
-  You can't load a new plugin into FL; say so and suggest parking it instead.
-- If a tool says the person rejected a change, accept it and ask what they want instead.
-- If FL isn't answering, tell them to open FL and pick Agent Composer in MIDI settings."""
-
-_run = {"proc": None}
-_lock = threading.Lock()
-
 
 def claude_path():
     return shutil.which("claude")
 
 
-def mcp_config():
-    p = os.path.join(home.path("state"), "mcp.json")
-    uv = shutil.which("uv") or "uv"
-    cfg = {"mcpServers": {"agent-composer": {
-        "command": uv, "args": ["run", "--quiet", "--script", os.path.join(ROOT, "mcp_server.py")],
-        "env": {"AC_APPROVALS": "1", "AGENT_COMPOSER_HOME": home.HOME}}}}
-    with open(p, "w", encoding="utf-8") as f:
-        json.dump(cfg, f)
-    return p
-
-
-def remember_session(sid, title):
-    s = home._read("sessions.json", [])
-    s = [x for x in s if x["id"] != sid]
-    old = next((x for x in home._read("sessions.json", []) if x["id"] == sid), None)
-    s.insert(0, {"id": sid, "title": (old or {}).get("title") or title[:60], "at": time.time()})
-    home._write("sessions.json", s[:50])
-
-
 def chat(text, session_id, emit):
-    """Run one turn through Claude Code and emit small events as they arrive."""
-    exe = claude_path()
-    if not exe:
-        emit({"type": "error", "text": "Claude Code isn't installed or isn't on PATH. See the README, step 1."})
-        return
-    st = home.settings()
-    args = [exe, "-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
-            "--mcp-config", mcp_config(), "--strict-mcp-config", "--tools", "",
-            "--allowedTools", "mcp__agent-composer", "--permission-mode", "dontAsk",
-            "--setting-sources", "project", "--append-system-prompt", PERSONA, "--model", st.get("model") or "opus"]
-    if session_id:
-        args += ["--resume", session_id]
-    env = dict(os.environ)
-    if st.get("brain") == "claude-api":
-        if not env.get("ANTHROPIC_API_KEY"):
-            emit({"type": "error", "text": "The Claude API brain needs ANTHROPIC_API_KEY set on this computer. Switch to Claude Code in Settings, or set the key and restart."})
-            emit({"type": "done", "session_id": session_id})
-            return
-    else:
-        env.pop("ANTHROPIC_API_KEY", None)  # Claude Code brain runs on the person's plan, never a stray key
-    flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-    errlog = open(os.path.join(home.path("state"), "claude-stderr.log"), "w+b")
-    proc = subprocess.Popen(args, cwd=home.path("state"), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                            stderr=errlog, env=env, creationflags=flags)
-    with _lock:
-        _run["proc"] = proc
-    proc.stdin.write(text.encode("utf-8"))
-    proc.stdin.close()
-    streamed, sid = False, session_id
-    for raw in proc.stdout:
-        try:
-            ev = json.loads(raw)
-        except ValueError:
-            continue
-        t = ev.get("type")
-        if t == "system" and ev.get("subtype") == "init":
-            sid = ev.get("session_id") or sid
-            emit({"type": "session", "id": sid})
-        elif t == "stream_event":
-            e = ev.get("event", {})
-            d = e.get("delta", {})
-            if e.get("type") == "content_block_delta" and d.get("type") == "text_delta":
-                streamed = True
-                emit({"type": "text", "delta": d.get("text", "")})
-            elif e.get("type") == "message_start":
-                streamed = False
-        elif t == "assistant":
-            for b in ev.get("message", {}).get("content", []):
-                if b.get("type") == "tool_use":
-                    emit({"type": "tool", "id": b["id"], "name": b["name"].replace(TOOL_PREFIX, ""), "input": b.get("input")})
-                elif b.get("type") == "text" and not streamed:
-                    emit({"type": "text", "delta": b.get("text", "")})
-        elif t == "user":
-            content = ev.get("message", {}).get("content", [])
-            for b in content if isinstance(content, list) else []:
-                if b.get("type") == "tool_result":
-                    body = b.get("content")
-                    if isinstance(body, list):
-                        body = " ".join(x.get("text", "") for x in body if isinstance(x, dict))
-                    body = str(body or "")
-                    ok = not b.get("is_error") and '"success": false' not in body.replace("'", '"').lower()
-                    emit({"type": "tool_done", "id": b.get("tool_use_id"), "ok": ok, "summary": body[:400]})
-        elif t == "result":
-            sid = ev.get("session_id") or sid
-            if ev.get("is_error"):
-                emit({"type": "error", "text": str(ev.get("result") or ev.get("subtype"))[:400]})
-    proc.wait()
-    with _lock:
-        _run["proc"] = None
-    if proc.returncode not in (0, None) and proc.returncode != 1:
-        errlog.seek(0)
-        err = errlog.read().decode("utf-8", "replace")[-400:]
-        if err.strip():
-            emit({"type": "error", "text": err})
-    errlog.close()
-    if sid:
-        remember_session(sid, text)
+    """Run one turn on the plugged-in brain (see brains.py) and stream its events."""
+    sid = brains.run(text, session_id, emit)
     emit({"type": "done", "session_id": sid})
 
 
 def stop_chat():
-    with _lock:
-        p = _run["proc"]
-    if p and p.poll() is None:
-        if os.name == "nt":
-            subprocess.call(["taskkill", "/T", "/F", "/PID", str(p.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            p.kill()
-        return True
-    return False
+    return brains.stop()
 
 
 def approvals():
@@ -235,7 +119,9 @@ class Handler(BaseHTTPRequestHandler):
         if p in ("/", "/index.html"):
             return self._file(os.path.join(UI, "index.html"), "text/html; charset=utf-8")
         if p == "/api/health":
+            b = brains.get(home.settings().get("brain"))
             return self._json({"ok": True, "version": VERSION, "fl": status(), "claude": bool(claude_path()),
+                               "brain": b["name"], "brain_ready": brains.check(b)[0],
                                "uv": bool(shutil.which("uv")), "home": home.HOME})
         if p == "/api/snapshot":
             return self._json(fl("project.getSnapshot"))
@@ -243,6 +129,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(home.settings())
         if p == "/api/approvals":
             return self._json(approvals())
+        if p == "/api/brains":
+            return self._json({"brains": [brains.public(x) for x in brains.all_brains()],
+                               "plugged": home.settings().get("brain"), "kinds": list(brains.KINDS)})
         if p == "/api/sessions":
             return self._json(home._read("sessions.json", []))
         if p == "/api/dock":
@@ -286,6 +175,12 @@ class Handler(BaseHTTPRequestHandler):
                 emit({"type": "error", "text": "Agent Composer hit an error: %r" % (e,)})
                 emit({"type": "done"})
             return
+        if p == "/api/brains":
+            return self._json(brains.add_custom(b.get("brain")))
+        if p == "/api/brains/remove":
+            return self._json(brains.remove_custom(str(b.get("id", ""))))
+        if p == "/api/brains/key":
+            return self._json(brains.set_key(str(b.get("id", "")), str(b.get("key", ""))))
         if p == "/api/stop":
             return self._json({"stopped": stop_chat()})
         if p == "/api/settings":

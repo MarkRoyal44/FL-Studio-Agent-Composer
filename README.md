@@ -5,7 +5,7 @@
 > Created by **Mark Royal**. Built by **Jelly**, the Claude-powered agent of **Tech-Ants LLC**, for **Loboi Recordz LLC**. See [CREDITS.md](CREDITS.md).
 
 ```
- you ──► chat window ──► Claude Code ──► agent-composer tools ──► file bridge ──► script inside FL Studio
+ you ──► chat window ──► your brain (Claude, Codex, OpenCode, DeepSeek, local…) ──► agent-composer tools ──► file bridge ──► script inside FL Studio
 ```
 
 ## What it does
@@ -18,7 +18,7 @@
 | **Piano roll writer** | Ask for a melody, chords or a bassline. You get a `.mid` file to drag in, and the notes queue for the **Agent Composer** piano-roll script (Piano roll › Tools › Scripting). |
 | **Takes folder** | Drop vocal takes into `Documents/Agent Composer/Takes`. Play, rename, and ask the agent about them. |
 | **Voice** | A mic button turns speech into a message (browser speech-to-text, nothing to install). Replies can be read aloud by the system voice or by your own voice server. |
-| **Battery brains** | Plug in a brain under Settings › Brain: Claude Code (your Claude plan) or the Claude API (your key). Codex and local models have sockets reserved. Opus, Sonnet or Haiku. |
+| **Any brain** | Plug in a brain under Settings › Brain: Claude Code, Claude API, Codex, OpenCode, DeepSeek or a local model through Ollama. Each one runs on **your own** account or key. Or paste your own, the way you'd paste an MCP server: any OpenAI-compatible API or any agent harness. See [docs/BRAINS.md](docs/BRAINS.md). |
 
 The agent only gets the Agent Composer tools. It can't read your files, run commands or browse the web.
 
@@ -26,7 +26,7 @@ The agent only gets the Agent Composer tools. It can't read your files, run comm
 
 You need:
 1. **FL Studio 2024 or newer** (it has to support Python MIDI scripts).
-2. **[Claude Code](https://docs.claude.com/en/docs/claude-code)**. Run `claude` once and sign in.
+2. **A brain**: [Claude Code](https://docs.claude.com/en/docs/claude-code) (run `claude` once and sign in), or Codex, OpenCode, a DeepSeek key or Ollama. See [docs/BRAINS.md](docs/BRAINS.md).
 3. **[uv](https://docs.astral.sh/uv/)** and **Python 3.10+**.
 4. **A virtual MIDI port** so FL loads the script, for example [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) with a port named `loopMIDI Port`.
 
@@ -61,7 +61,8 @@ Open `app/ui/index.html` straight in a browser. With no app behind it, it runs i
 ## Project layout
 
 ```
-app/server.py            the local app: serves the window, runs Claude Code, relays approvals
+app/server.py            the local app: serves the window, runs the brain, relays approvals
+app/brains.py            the brains: Claude Code, Codex, OpenCode, API models, your own harness
 app/ui/index.html        the whole interface (one file, no build step)
 mcp_server.py            the agent's tools (MCP server)
 ac.py                    the file bridge to FL, plus a CLI: python ac.py status | snapshot

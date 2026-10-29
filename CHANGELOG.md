@@ -2,6 +2,17 @@
 
 All notable changes to Agent Composer. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [0.3.0] - 2026-10-29
+### Added
+- Six live brains in Settings › Brain: Claude Code, Claude API, Codex, OpenCode, DeepSeek and Local (Ollama). Each runs on the person's own account or key and gets only the FL tools. See [docs/BRAINS.md](docs/BRAINS.md).
+- **Add your own brain**: paste one JSON object for any OpenAI-compatible API or any CLI harness that reads an MCP config. Templates are included.
+- `app/brains.py`: brain adapters, a stdlib MCP client and the OpenAI-compatible tool loop.
+- API keys pasted in Settings are kept in `state/keys.json` and never sent back to the window.
+
+### Changed
+- Brain cards show what's missing ("SET UP") instead of "SOON".
+- Past chats remember which brain they started on.
+
 ## [0.2.0] - 2026-10-29
 ### Added
 - Desktop app (`app/server.py` + `app/ui/index.html`): a Claudian-style chat window that runs Claude Code with only the Agent Composer tools. Streaming replies, live tool rows, Stop, past chats, `/` quick commands.

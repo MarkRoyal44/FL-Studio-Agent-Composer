@@ -12,7 +12,8 @@ This is for developers who want to change Agent Composer. For the why, read the 
 | `mcp_server.py` | `uv run --script` (stdio) | MCP tools for the model; the approval gate |
 | `home.py` | imported | Settings, VST dock, takes, under `Documents/Agent Composer` |
 | `midifile.py` | imported | Standard-library `.mid` writer |
-| `app/server.py` | Python, localhost | Serves the UI, runs Claude Code per turn, streams events, relays approvals |
+| `app/server.py` | Python, localhost | Serves the UI, runs the brain per turn, streams events, relays approvals |
+| `app/brains.py` | imported | Brain adapters (Claude, Codex, OpenCode, OpenAI-compatible, your own CLI) |
 | `app/ui/index.html` | browser / Edge app window | The whole interface; falls back to demo mode with no server |
 
 ## The file bridge
@@ -56,14 +57,22 @@ With approvals off (Settings › Safety & feel) or outside the app, `_ask` retur
 
 ## HTTP API (localhost)
 
-`GET` `/api/health` · `/api/snapshot` · `/api/settings` · `/api/approvals` · `/api/sessions` · `/api/dock` · `/api/params?channel=N` · `/api/takes` · `/api/midi` · `/takes/<file>`
+`GET` `/api/health` · `/api/brains` · `/api/snapshot` · `/api/settings` · `/api/approvals` · `/api/sessions` · `/api/dock` · `/api/params?channel=N` · `/api/takes` · `/api/midi` · `/takes/<file>`
 
-`POST` (needs `X-Agent-Composer: 1`) `/api/chat` · `/api/stop` · `/api/settings` · `/api/approvals/<id>` · `/api/park` · `/api/unpark` · `/api/preset` · `/api/param` · `/api/transport` · `/api/undo` · `/api/rename-take` · `/api/open-folder`
+`POST` (needs `X-Agent-Composer: 1`) `/api/chat` · `/api/stop` · `/api/brains` · `/api/brains/remove` · `/api/brains/key` · `/api/settings` · `/api/approvals/<id>` · `/api/park` · `/api/unpark` · `/api/preset` · `/api/param` · `/api/transport` · `/api/undo` · `/api/rename-take` · `/api/open-folder`
 
 Direct UI actions (preset, knob, transport, undo) skip the approval card because the person clicked them.
 
-## Adding a brain (battery cell)
+## Brains
 
-A brain is any process that can call the MCP tools in `mcp_server.py` and stream text. To add one:
-1. Add a cell to `CELLS` in `index.html` and drop `soon: true`.
-2. In `server.py`, branch in `chat()` on `settings()["brain"]` and translate that brain's stream into the event table above. The UI doesn't change.
+`app/brains.py` holds the brains. `server.chat()` calls `brains.run()`, which picks the plugged-in brain and translates its output into the event table above.
+
+| Kind | How it runs |
+|---|---|
+| `claude` | `claude -p --output-format stream-json`, as above |
+| `codex` | `codex exec --json --ignore-user-config -s read-only`, with shell, apps and browser off, and the FL server passed with `-c mcp_servers.agent-composer.*` |
+| `opencode` | `opencode run --format json`, with a private `OPENCODE_CONFIG` that turns every built-in tool off |
+| `openai` | Agent Composer runs the loop: `/chat/completions` with streaming, plus a small stdio MCP client (`MCPClient`) that lists and calls the FL tools. Threads are stored in `state/threads/` |
+| `cli` | your command, with `{prompt}`, `{mcp_config}`, `{session}` and `{model}` filled in; output read as `text`, `claude`, `codex` or `opencode` |
+
+Custom brains: `GET /api/brains`, `POST /api/brains` with `{"brain": {...}}`, `POST /api/brains/remove`, `POST /api/brains/key`. Keys are never returned. Full format: [BRAINS.md](BRAINS.md).

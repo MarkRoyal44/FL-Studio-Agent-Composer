@@ -186,6 +186,17 @@ button.card:hover{transform:translateY(-2px);border-color:var(--line-2)}
 .card.on .bat{color:var(--accent)}
 .card.on .tag{background:var(--accent);color:var(--accent-ink)}
 .card.off{opacity:.6}
+.card.warn small{color:var(--warm)}
+.card .x{border:0;background:none;color:var(--faint);font-size:16px;padding:2px 6px;border-radius:8px}
+.card .x:hover{color:var(--ink);background:var(--panel-3)}
+.keyrow{display:flex;gap:8px}
+input[type=password]{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;width:100%}
+details.add{border:1px dashed var(--line-2);border-radius:var(--r);padding:10px 12px}
+details.add summary{cursor:pointer;font-weight:800;color:var(--accent);list-style:none}
+details.add>*+*{margin-top:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--panel-3);color:var(--ink);border-radius:99px;padding:4px 10px;font-size:12.5px;font-weight:700}
+textarea.paste{width:100%;min-height:130px;max-height:none;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font:12.5px/1.5 var(--f-mono);color:var(--ink);resize:vertical}
 .card .bat{width:26px;height:13px;color:var(--dim)}
 .card.on .bat i{animation:charge 2.4s ease-in-out infinite}
 @keyframes charge{0%{width:30%}60%,100%{width:var(--lvl,85%)}}
@@ -276,7 +287,17 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <div id="cells" style="display:flex;flex-direction:column;gap:8px"></div>
       <h3>Model</h3>
       <div class="seg" id="modelSeg"><button data-m="opus">Opus</button><button data-m="sonnet">Sonnet</button><button data-m="haiku">Haiku</button></div>
-      <p class="note">Every brain gets the same project tools and nothing else: it can touch FL, not your files. Opus thinks deepest, Haiku answers fastest.</p>
+      <div class="field" id="modelField" hidden><input type="text" id="modelTxt" placeholder="Model name" aria-label="Model name" spellcheck="false"></div>
+      <div class="field" id="keyField" hidden><label for="keyTxt" id="keyLbl">API key</label>
+        <div class="keyrow"><input type="password" id="keyTxt" placeholder="Paste your key" autocomplete="off" spellcheck="false"><button class="btn" id="keySave">Save</button></div>
+        <small class="note">Stays on this computer in your Agent Composer folder. It only ever goes to that brain.</small></div>
+      <p class="note">Each brain runs on <b>your own</b> account or key, from the apps on this computer. Every brain gets the same project tools and nothing else: it can touch FL, not your files.</p>
+      <details class="add" id="addBrain"><summary>＋ Add your own brain</summary>
+        <p class="note">Paste a brain the way you'd paste an MCP server. Any OpenAI-compatible API works (OpenRouter, Groq, LM Studio, your own server), and so does any agent harness that can read an MCP config. Tap a template to start.</p>
+        <div class="chips" id="tpls"><button data-t="api">API model</button><button data-t="local">Local server</button><button data-t="cli">Harness (CLI)</button></div>
+        <textarea id="brainJson" class="paste" rows="7" spellcheck="false" aria-label="Brain JSON"></textarea>
+        <div class="row" style="justify-content:flex-end"><button class="btn primary" id="brainAdd">Plug it in</button></div>
+      </details>
     </section>
 
     <section class="sec" data-p="dock" hidden>
@@ -485,24 +506,51 @@ $("#ra").onclick=()=>setRead(!S.read_aloud);
 $("#voiceUrl").addEventListener("change",e=>save({voice_server:e.target.value.trim()}));
 
 /* ---------- settings box ---------- */
-const CELLS=[
-  {id:"claude-code",name:"Claude Code",sub:"Your Claude plan. No key needed.",lvl:"88%"},
-  {id:"claude-api",name:"Claude API",sub:"Pay per use. Reads ANTHROPIC_API_KEY from your system.",lvl:"60%"},
-  {id:"codex",name:"Codex",sub:"Socket ready. Adapter coming.",lvl:"35%",soon:true},
-  {id:"local",name:"Local model (Ollama)",sub:"Free and offline. Adapter coming.",lvl:"100%",soon:true}];
+let BRAINS=[
+  {id:"claude-code",kind:"claude",name:"Claude Code",sub:"Your Claude plan. Opus, Sonnet or Haiku.",ready:true,builtin:true},
+  {id:"claude-api",kind:"claude",name:"Claude API",sub:"Pay as you go with your Anthropic key.",api_key_env:"ANTHROPIC_API_KEY",ready:true,builtin:true},
+  {id:"codex",kind:"codex",name:"Codex",sub:"Your ChatGPT plan, through the Codex CLI.",ready:true,builtin:true},
+  {id:"opencode",kind:"opencode",name:"OpenCode",sub:"Any provider you've set up in OpenCode.",ready:true,builtin:true},
+  {id:"deepseek",kind:"openai",name:"DeepSeek",sub:"DeepSeek's API with your key. Cheap and quick.",model:"deepseek-chat",api_key_env:"DEEPSEEK_API_KEY",ready:true,builtin:true},
+  {id:"ollama",kind:"openai",name:"Local (Ollama)",sub:"Free and offline. Pick a model that supports tools.",model:"qwen3:8b",base_url:"http://localhost:11434/v1",ready:true,builtin:true}];
+const LVL={claude:"88%",codex:"70%",opencode:"62%",openai:"50%",cli:"40%"};
 const MODELS={opus:"Opus",sonnet:"Sonnet",haiku:"Haiku"};
-function drawCells(){$("#cells").innerHTML=CELLS.map(c=>`<button class="card ${c.id===S.brain?"on":""} ${c.soon?"off":""}" data-id="${c.id}" ${c.soon?'aria-disabled="true"':""}>
-  <span class="bat" style="--lvl:${c.lvl}"><i></i></span><span class="grow"><b>${c.name}</b><small>${c.sub}</small></span><span class="tag">${c.id===S.brain?"PLUGGED IN":c.soon?"SOON":"PLUG IN"}</span></button>`).join("");
-  $("#cellName").textContent=`${CELLS.find(c=>c.id===S.brain).name} · ${MODELS[S.model]||S.model}`;
-  $$("#modelSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===S.model))}
-$("#cells").addEventListener("click",e=>{const b=e.target.closest(".card");if(!b)return;const c=CELLS.find(x=>x.id===b.dataset.id);
-  if(c.soon){b.animate([{transform:"translateX(-4px)"},{transform:"translateX(4px)"},{transform:"none"}],{duration:250});sfx.no();toast(c.name+" is coming in a later update");return}
-  S.brain=c.id;save({brain:c.id});drawCells();sfx.ok()});
+const TPL={
+  api:{name:"OpenRouter",kind:"openai",base_url:"https://openrouter.ai/api/v1",model:"deepseek/deepseek-chat",api_key_env:"OPENROUTER_API_KEY"},
+  local:{name:"LM Studio",kind:"openai",base_url:"http://localhost:1234/v1",model:"qwen2.5-7b-instruct"},
+  cli:{name:"My harness",kind:"cli",command:["my-agent","--mcp-config","{mcp_config}","--resume","{session}","{prompt}"],format:"text"}};
+const brain=()=>BRAINS.find(b=>b.id===S.brain)||BRAINS[0];
+function brainLabel(b){return b.kind==="claude"?(MODELS[S.model]||S.model):(b.model||"default")}
+function drawCells(){$("#cells").innerHTML=BRAINS.map(c=>{const on=c.id===S.brain,warn=!c.ready;
+  return`<div class="card ${on?"on":""} ${warn?"warn":""}" data-id="${esc(c.id)}" role="button" tabindex="0">
+  <span class="bat" style="--lvl:${LVL[c.kind]||"60%"}"><i></i></span><span class="grow"><b>${esc(c.name)}</b><small>${esc(warn?c.why:c.sub||(c.kind+" · "+(c.model||"")))}</small></span>
+  <span class="tag">${on?"PLUGGED IN":warn?"SET UP":"PLUG IN"}</span>${c.builtin?"":`<button class="x" data-rm="${esc(c.id)}" title="Remove this brain" aria-label="Remove ${esc(c.name)}">×</button>`}</div>`}).join("");
+  const b=brain();$("#cellName").textContent=`${b.name} · ${brainLabel(b)}`;
+  $("#modelSeg").hidden=b.kind!=="claude";$("#modelField").hidden=b.kind==="claude"||b.kind==="cli";
+  $("#modelTxt").value=b.model||"";$("#modelTxt").placeholder=b.kind==="codex"?"Default Codex model":b.kind==="opencode"?"provider/model, or leave blank":"Model name";
+  const needsKey=(b.kind==="openai"&&!/localhost|127\.0\.0\.1/.test(b.base_url||""))||b.id==="claude-api";
+  $("#keyField").hidden=!needsKey;$("#keyLbl").textContent=`${b.name} key${b.has_key?" · saved ✓":b.api_key_env?" (or set "+b.api_key_env+")":""}`;
+  $$("#modelSeg button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===S.model))}
+async function loadBrains(){if(LIVE){const r=await api("/api/brains");if(r.brains){BRAINS=r.brains;S.brain=r.plugged||S.brain}}drawCells()}
+function plug(id){const c=BRAINS.find(x=>x.id===id);if(!c)return;S.brain=c.id;save({brain:c.id});drawCells();
+  if(!c.ready){sfx.no();toast(c.why)}else{sfx.ok();toast(c.name+" plugged in")}}
+$("#cells").addEventListener("click",async e=>{const rm=e.target.dataset.rm;
+  if(rm){e.stopPropagation();if(LIVE)await post("/api/brains/remove",{id:rm});BRAINS=BRAINS.filter(b=>b.id!==rm);if(S.brain===rm)S.brain="claude-code";drawCells();sfx.close();toast("Brain removed");return}
+  const card=e.target.closest(".card");if(card)plug(card.dataset.id)});
+$("#cells").addEventListener("keydown",e=>{const card=e.target.closest(".card");if(card&&(e.key==="Enter"||e.key===" ")){e.preventDefault();plug(card.dataset.id)}});
+$("#modelTxt").addEventListener("change",e=>{const b=brain(),m=e.target.value.trim();b.model=m;save({brain_models:{...(S.brain_models||{}),[b.id]:m}});drawCells();sfx.tick()});
+$("#keySave").onclick=async()=>{const b=brain(),k=$("#keyTxt").value.trim();if(LIVE){await post("/api/brains/key",{id:b.id,key:k});await loadBrains()}else{b.has_key=!!k;drawCells()}
+  $("#keyTxt").value="";sfx.ok();toast(k?"Key saved on this computer":"Key removed")};
+$("#tpls").addEventListener("click",e=>{const t=TPL[e.target.dataset.t];if(!t)return;$("#brainJson").value=JSON.stringify(t,null,2);sfx.tick()});
+$("#brainAdd").onclick=async()=>{let b;try{b=JSON.parse($("#brainJson").value)}catch(e){sfx.no();return toast("That isn't valid JSON yet")}
+  if(LIVE){const r=await post("/api/brains",{brain:b});if(!r.success){sfx.no();return toast(r.error||"Couldn't add it")}await loadBrains();plug(r.brain.id)}
+  else{b.id="custom-"+String(b.name||"brain").toLowerCase().replace(/\W+/g,"-");b.ready=true;delete b.api_key;BRAINS=BRAINS.filter(x=>x.id!==b.id).concat(b);plug(b.id)}
+  $("#brainJson").value="";$("#addBrain").open=false};
 $("#modelSeg").addEventListener("click",e=>{const m=e.target.dataset.m;if(!m)return;S.model=m;save({model:m});drawCells();sfx.tick()});
 function openSet(tab){$("#scrim").hidden=false;pick(tab||store.get("tab","brain"));sfx.open()}
 function closeSet(){if($("#scrim").hidden)return;$("#scrim").hidden=true;sfx.close()}
 function pick(t){$$(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));$$(".sec").forEach(s=>s.hidden=s.dataset.p!==t);store.set("tab",t);
-  ({dock:loadDock,notes:loadMidi,takes:loadTakes,project:loadProject})[t]?.()}
+  ({brain:loadBrains,dock:loadDock,notes:loadMidi,takes:loadTakes,project:loadProject})[t]?.()}
 $("#openSet").onclick=()=>openSet();$("#modelBtn").onclick=()=>openSet("brain");$("#closeSet").onclick=closeSet;
 $("#scrim").addEventListener("click",e=>{if(e.target.id==="scrim")closeSet()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSet()});
@@ -513,7 +561,7 @@ $$("[data-open]").forEach(b=>b.onclick=()=>LIVE?post("/api/open-folder",{which:b
 async function api(u){try{return await (await fetch(u)).json()}catch(e){return{error:"offline"}}}
 async function post(u,b){try{return await (await fetch(u,{method:"POST",headers:H,body:JSON.stringify(b)})).json()}catch(e){return{error:"offline"}}}
 function save(ch){Object.assign(S,ch);LIVE?post("/api/settings",ch):store.set("settings",S)}
-function applySettings(){drawCells();$$(".sw[data-k]").forEach(s=>s.setAttribute("aria-checked",!!S[s.dataset.k]));
+function applySettings(){loadBrains();$$(".sw[data-k]").forEach(s=>s.setAttribute("aria-checked",!!S[s.dataset.k]));
   $("#spk").classList.toggle("on",S.read_aloud);$("#ra").setAttribute("aria-checked",S.read_aloud);$("#voiceUrl").value=S.voice_server||""}
 
 /* VST dock */
@@ -564,7 +612,7 @@ $("#pRe").onclick=()=>{loadProject();sfx.tick()};
 /* link light */
 async function refreshLink(){if(!LIVE){$("#dot").className="dot warn";$("#linkTxt").textContent="demo";return}
   const h=await api("/api/health");const ok=h.fl&&h.fl.alive&&h.fl.seconds_since_heartbeat<10;
-  $("#dot").className="dot "+(ok?"live":"warn");$("#linkTxt").textContent=!h.claude?"Claude Code not found":ok?(h.fl.project||"linked to FL"):"FL not linked"}
+  $("#dot").className="dot "+(ok?"live":"warn");$("#linkTxt").textContent=!h.brain_ready?h.brain+" needs setup":ok?(h.fl.project||"linked to FL"):"FL not linked"}
 
 /* ---------- demo mode: the same window with a scripted agent ---------- */
 const now=Date.now()/1000;

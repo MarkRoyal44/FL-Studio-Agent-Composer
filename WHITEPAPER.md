@@ -1,6 +1,6 @@
 # Agent Composer: an AI agent that works inside your DAW
 
-**White paper, version 0.2, October 2026**
+**White paper, version 0.3, October 2026**
 Created by Mark Royal · Built by Jelly (Tech-Ants LLC) · For Loboi Recordz LLC
 
 ---
@@ -85,7 +85,7 @@ None of it slows the work down. Every effect finishes in under half a second.
 | Layer | What it stops |
 |---|---|
 | Exact allow-list inside FL | Arbitrary code; unknown actions |
-| Only Agent Composer tools offered to the model | File access, shell commands, web access |
+| Only Agent Composer tools offered to the model, on every brain | File access, shell commands, web access |
 | Approval gate in the tool server | Any project change without a human Approve |
 | Save off by default | Overwriting the project file |
 | One undo step per action | Changes that can't be reversed |
@@ -95,7 +95,16 @@ The approval gate lives in the tool server, not the UI. A change can't skip it e
 
 ## 6. The battery model
 
-The brain is a swappable cell. Today Claude Code (on the producer's own Claude plan) and the Claude API (on their own key) plug in. The tools, approvals and UI stay the same whichever brain is plugged in. Sockets are reserved for Codex and local models (Ollama). Any brain that can call MCP tools fits, because the tools are a standard protocol, not a private API.
+The brain is a swappable cell, and Agent Composer doesn't bring one of its own. Producers plug in what they already pay for or run:
+- Claude Code or the Claude API,
+- Codex,
+- OpenCode,
+- DeepSeek,
+- a free local model through Ollama.
+
+Each brain is kept to the FL tools. Claude Code has its built-in tools off. Codex runs without shell, apps or browser. OpenCode has every built-in tool off. For API models, Agent Composer runs the tool loop itself and offers only the FL tools.
+
+A producer can also paste their own brain the way they would paste an MCP server. That can be any OpenAI-compatible API, or any agent harness that reads a standard MCP config. The tools, approvals and UI stay the same whichever brain is plugged in, because the tools are a standard protocol, not a private API.
 
 ## 7. Limits
 
@@ -107,7 +116,7 @@ The brain is a swappable cell. Today Claude Code (on the producer's own Claude p
 ## 8. Roadmap
 
 1. **Signed one-click installer** that bundles the window as a desktop app.
-2. **Codex and local-model adapters** for the reserved battery sockets.
+2. **Brain presets to share**: export a custom brain card for others to paste, with no keys inside.
 3. **Local speech-to-text** (Whisper-class) through the voice server socket.
 4. **Arrangement awareness:** reading playlist clips and markers for song-structure requests.
 5. **Takes intelligence:** automatic take naming and comparing takes by loudness and timing.

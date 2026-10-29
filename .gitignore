@@ -3,3 +3,21 @@ __pycache__/
 .venv/
 .DS_Store
 Thumbs.db
+
+# Secrets and personal state: never commit
+.env
+.env.*
+*.env
+keys.json
+brains.json
+state/
+threads/
+*.log
+*.pem
+*.key
+*.pfx
+secrets*
+credentials*
+mcp.json
+opencode.json
+node_modules/
