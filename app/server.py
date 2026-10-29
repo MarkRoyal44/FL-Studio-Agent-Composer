@@ -25,7 +25,7 @@ import brains  # noqa: E402
 import minibrain  # noqa: E402
 from ac import send, status  # noqa: E402
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 UI = os.path.join(ROOT, "app", "ui")
 PORT = int(os.environ.get("AGENT_COMPOSER_PORT", "47800"))
 
@@ -296,6 +296,38 @@ def auto_dock():
             return
 
 
+def fl_favorite():
+    """Put the Agent Composer plugin at the top of FL's Add menu.
+
+    FL lists favorites from Plugin database/Generators. Once FL has scanned the plugin it writes
+    an entry under Installed/; copying that entry up makes it a favorite, like starring it in FL's
+    Plugin Manager.
+    """
+    db = os.path.join(os.path.expanduser("~"), "Documents", "Image-Line", "FL Studio", "Presets", "Plugin database")
+    fav = os.path.join(db, "Generators", "Agent Composer.fst")
+    if os.path.isfile(fav):
+        return True
+    for root, _, files in os.walk(os.path.join(db, "Installed", "Generators")):
+        if "Agent Composer.fst" in files:
+            for ext in (".fst", ".nfo"):
+                src = os.path.join(root, "Agent Composer" + ext)
+                if os.path.isfile(src):
+                    shutil.copyfile(src, os.path.join(db, "Generators", "Agent Composer" + ext))
+            return True
+    return False
+
+def watch_favorite():
+    # FL may scan the plugin while the app is already running, so keep checking until it lands.
+    import time
+    while True:
+        try:
+            if fl_favorite():
+                return
+        except OSError:
+            pass
+        time.sleep(30)
+
+
 def already_running():
     # Windows lets a second server bind the same port, so ask first instead of starting twice.
     import urllib.request
@@ -308,6 +340,7 @@ def already_running():
 
 def main():
     port = PORT
+    threading.Thread(target=watch_favorite, daemon=True).start()
     if already_running():
         print("Agent Composer is already running at http://127.0.0.1:%d/" % PORT)
         if "--no-open" not in sys.argv:

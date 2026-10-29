@@ -12,6 +12,12 @@ New-Item -ItemType Directory -Force $work | Out-Null
 # Only what's committed goes in, so nothing private can slip into the exe.
 git -C $repo archive --format=zip -o (Join-Path $work "payload.zip") HEAD
 Copy-Item (Join-Path $repo "installer\setup.ps1") $work
+# The FL plugin (Rust, CLAP). Building it needs cargo and the MSVC build tools.
+Push-Location (Join-Path $repo "plugin")
+cmd /c "cargo build --release >nul 2>&1"
+$target = (cargo metadata --format-version 1 --no-deps | ConvertFrom-Json).target_directory
+Pop-Location
+Copy-Item (Join-Path $target "release\agent_composer_plugin.dll") (Join-Path $work "Agent Composer.clap")
 Set-Content (Join-Path $work "run.cmd") "@powershell -NoProfile -ExecutionPolicy Bypass -File setup.ps1" -Encoding ascii
 
 $sed = @"
@@ -41,12 +47,14 @@ SourceFiles=SourceFiles
 FILE0="payload.zip"
 FILE1="setup.ps1"
 FILE2="run.cmd"
+FILE3="Agent Composer.clap"
 [SourceFiles]
 SourceFiles0=$work\
 [SourceFiles0]
 %FILE0%=
 %FILE1%=
 %FILE2%=
+%FILE3%=
 "@
 $sedPath = Join-Path $work "setup.sed"
 Set-Content $sedPath $sed -Encoding ascii

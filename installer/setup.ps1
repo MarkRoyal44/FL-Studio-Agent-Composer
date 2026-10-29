@@ -26,7 +26,7 @@ Say "  Chat with an AI agent that works inside your open FL project."
 Say ""
 
 # 1. The app itself
-Say "[1/5] Copying Agent Composer to $dest"
+Say "[1/6] Copying Agent Composer to $dest"
 $payload = Join-Path $here "payload.zip"
 $stage = Join-Path $env:TEMP ("ac-setup-" + [guid]::NewGuid().ToString("N"))
 if (Test-Path $payload) {
@@ -43,7 +43,7 @@ Get-ChildItem $src -Force | Where-Object { $_.Name -notin @(".git", "__pycache__
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
 
 # 2. uv (brings Python with it)
-Say "[2/5] Checking uv, the tool that runs Agent Composer"
+Say "[2/6] Checking uv, the tool that runs Agent Composer"
 $env:PATH = "$env:USERPROFILE\.local\bin;$env:PATH"
 if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     Say "      Installing uv for this user (free, from astral.sh)..."
@@ -60,7 +60,7 @@ if (Get-Command uv -ErrorAction SilentlyContinue) {
 }
 
 # 3. loopMIDI (the port FL loads the script on)
-Say "[3/5] Checking loopMIDI, the virtual MIDI port FL talks through"
+Say "[3/6] Checking loopMIDI, the virtual MIDI port FL talks through"
 $lm = "${env:ProgramFiles(x86)}\Tobias Erichsen\loopMIDI\loopMIDI.exe"
 if (-not (Test-Path $lm)) {
     if ((Get-Command winget -ErrorAction SilentlyContinue) -and (Ask "      loopMIDI isn't installed. Install it now (free)?")) {
@@ -85,7 +85,7 @@ if (Test-Path $lm) {
 }
 
 # 4. FL scripts
-Say "[4/5] Copying the scripts into FL Studio"
+Say "[4/6] Copying the scripts into FL Studio"
 try {
     & (Join-Path $dest "install.ps1") | Out-Null
     Say "      Done. FL picks it up on its own the next time it opens." Green
@@ -93,8 +93,37 @@ try {
     Say "      $($_.Exception.Message)" Yellow
 }
 
-# 5. Shortcuts and the Apps list entry
-Say "[5/5] Adding shortcuts"
+# 5. The plugin: Agent Composer inside FL, in the Add menu
+Say "[5/6] Adding the Agent Composer plugin to FL Studio"
+$clap = Join-Path $here "Agent Composer.clap"
+$clapDir = Join-Path $env:LOCALAPPDATA "Programs\Common\CLAP"  # the per-user CLAP folder
+if (Test-Path $clap) {
+    New-Item -ItemType Directory -Force $clapDir | Out-Null
+    try {
+        Copy-Item $clap (Join-Path $clapDir "Agent Composer.clap") -Force
+        # Tell FL to look in that folder (Options > Manage plugins shows it as a custom folder).
+        $list = "HKCU:\Software\Image-Line\Shared\Plugin search paths\List"
+        New-Item -Force $list -ErrorAction SilentlyContinue | Out-Null
+        $known = Get-ChildItem $list | Where-Object { (Get-ItemProperty $_.PSPath).path -eq "$clapDir\" }
+        if (-not $known) {
+            $n = (Get-ChildItem $list | ForEach-Object { [int]$_.PSChildName } | Measure-Object -Maximum).Maximum
+            $k = Join-Path $list ([string]([int]$n + 1))
+            New-Item $k -Force | Out-Null
+            New-ItemProperty $k -Name path -Value "$clapDir\" -PropertyType String -Force | Out-Null
+            foreach ($v in @(@("custom", 1), @("plugclass", 0), @("selected", 1))) {
+                New-ItemProperty $k -Name $v[0] -Value $v[1] -PropertyType DWord -Force | Out-Null
+            }
+        }
+        Say "      Done. In FL: Options > Manage plugins > Find installed plugins, once." Green
+    } catch {
+        Say "      Close FL Studio and run setup again to update the plugin. ($($_.Exception.Message))" Yellow
+    }
+} else {
+    Say "      Skipped: no plugin in this build. Run installer\build.ps1 to make one." Yellow
+}
+
+# 6. Shortcuts and the Apps list entry
+Say "[6/6] Adding shortcuts"
 $ws = New-Object -ComObject WScript.Shell
 $icon = Join-Path $dest "app\ui\icon.ico"
 foreach ($dir in @([Environment]::GetFolderPath("Programs"), [Environment]::GetFolderPath("Desktop"))) {
@@ -120,6 +149,7 @@ $ver = (Select-String -Path (Join-Path $dest "app\server.py") -Pattern '^VERSION
 Say ""
 Say "  All set. Agent Composer $ver is installed." Green
 Say "  Open FL Studio, then open Agent Composer from the desktop or Start menu."
+Say "  Or inside FL: Add > Agent Composer (after one plugin scan)."
 Say "  The 'Start here' tab walks you through the rest."
 Say ""
 if (-not $Quiet -and (Ask "  Open Agent Composer now?")) { Start-Process (Join-Path $dest "start.bat") -WorkingDirectory $dest -WindowStyle Minimized }
