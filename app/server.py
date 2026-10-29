@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.join(ROOT, "app"))
 import home  # noqa: E402
 import brains  # noqa: E402
 import minibrain  # noqa: E402
+import licensing  # noqa: E402
 from ac import send, status  # noqa: E402
 
 VERSION = "0.7.0"
@@ -128,6 +129,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(fl("project.getSnapshot"))
         if p == "/api/settings":
             return self._json(home.settings())
+        if p == "/api/license":
+            return self._json(licensing.current())
         if p == "/api/approvals":
             return self._json(approvals())
         if p == "/api/brains":
@@ -188,6 +191,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(minibrain.add(b.get("name"), b.get("data")))
         if p == "/api/minibrain/remove":
             return self._json(minibrain.remove(b.get("name")))
+        if p == "/api/license":
+            return self._json(licensing.activate(b.get("code", "")))
         if p == "/api/stop":
             return self._json({"stopped": stop_chat()})
         if p == "/api/settings":

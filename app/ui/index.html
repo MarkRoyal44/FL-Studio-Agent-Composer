@@ -389,10 +389,13 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
     <section class="sec" data-p="support" hidden>
       <h3>Agent Composer is free</h3>
-      <p class="note">Free forever and open source under the MIT license: use it, fork it, ship your own. If it saved you a session, a tip keeps it growing.</p>
+      <p class="note">Free for you, your beats and your studio: anyone with fewer than 100 people and under $1M a year in revenue uses it free, for money or for fun (PolyForm Small Business license). If it saved you a session, a tip keeps it growing.</p>
       <a class="card donate" id="donate" target="_blank" rel="noopener"><span style="font-size:20px">💸</span><span class="grow"><b>Tip on Cash App</b><small id="donateTag"></small></span><span aria-hidden="true">›</span></a>
       <a class="card" href="https://github.com/MarkRoyal44/FL-Studio-Agent-Composer" target="_blank" rel="noopener"><span style="font-size:20px">⭐</span><span class="grow"><b>Star it on GitHub</b><small>Free, and it helps other producers find it</small></span><span aria-hidden="true">›</span></a>
       <a class="card" href="https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/issues/new" target="_blank" rel="noopener"><span style="font-size:20px">🐞</span><span class="grow"><b>Report a bug or ask for a feature</b><small>Opens a GitHub issue</small></span><span aria-hidden="true">›</span></a>
+      <h3>Commercial license</h3>
+      <p class="note" id="licNote">Bigger than that? A company with 100+ people or $1M+ a year needs a commercial license. Pay on Cash App with your company name and how to reach you in the note, and you'll get a code. Paste it here.</p>
+      <div class="keyrow" id="licRow"><input type="text" id="licTxt" placeholder="Paste your code (AC1.…)" autocomplete="off" spellcheck="false" aria-label="License code"><button class="btn" id="licSave">Unlock</button></div>
       <p class="note">Made by Mark Royal · Tech-Ants LLC and Loboi Recordz LLC.</p>
     </section>
     </div>
@@ -406,7 +409,7 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const H={"Content-Type":"application/json","X-Agent-Composer":"1"};
 let LIVE=false, busy=false, sessionId=null, pollT=null;
 let S={ask_before_changes:true,dock_to_fl:true,allow_save:false,mini_brain:true,model:"opus",brain:"claude-code",read_aloud:false,sounds:true,voice_server:""};
-const CASHTAG="$CASHTAG"; // the one place the tip link lives
+const CASHTAG="$Mark4949"; // the one place the tip link lives
 $("#donate").href="https://cash.app/"+CASHTAG;$("#donateTag").textContent=CASHTAG+" · any amount, no account needed to view";
 const store={get(k,d){try{const v=localStorage.getItem("ac."+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("ac."+k,JSON.stringify(v))}catch(e){}}};
 
@@ -614,6 +617,9 @@ $("#yolo").onclick=()=>{save({ask_before_changes:!S.ask_before_changes});syncYol
 $$("[data-open]").forEach(b=>b.onclick=()=>LIVE?post("/api/open-folder",{which:b.dataset.open}):toast("Opens the folder in the desktop app"));
 
 async function api(u){try{return await (await fetch(u)).json()}catch(e){return{error:"offline"}}}
+function showLic(l){if(!l||!l.commercial)return;$("#licNote").innerHTML="";$("#licNote").append("✅ Commercial license "+l.id+": licensed to ",Object.assign(document.createElement("b"),{textContent:l.to}),". Thank you.");$("#licRow").hidden=true}
+api("/api/license").then(showLic);
+$("#licSave").onclick=async()=>{const r=await post("/api/license",{code:$("#licTxt").value});if(r.error)toast(r.error==="offline"?"Open the app to unlock":r.error);else{showLic(r);toast("Commercial license unlocked")}};
 async function post(u,b){try{return await (await fetch(u,{method:"POST",headers:H,body:JSON.stringify(b)})).json()}catch(e){return{error:"offline"}}}
 function save(ch){Object.assign(S,ch);LIVE?post("/api/settings",ch):store.set("settings",S)}
 function applySettings(){loadBrains();$$(".sw[data-k]").forEach(s=>s.setAttribute("aria-checked",!!S[s.dataset.k]));syncYolo();

@@ -7,6 +7,10 @@ All notable changes to Agent Composer. Format: [Keep a Changelog](https://keepac
 - **A real FL Studio plugin.** `Agent Composer.clap` is a CLAP generator, so it shows up in FL's **Add** menu and Channel rack. Its plugin window is the chat itself (an embedded WebView2), and it starts the app if it isn't running. It makes no sound. Built in Rust with nih-plug (`plugin/`).
 - Setup installs the plugin to the per-user CLAP folder and adds that folder to FL's plugin search paths. After one **Options › Manage plugins › Find installed plugins**, it sits at the top of the Add menu next to FL's other favorites. Uninstall removes all of it.
 - **♥ Support** tab: tip on Cash App, star the repo, report a bug.
+- **Commercial license codes**: companies over the small-business line pay on Cash App and get a signed code; paste it in ♥ Support to unlock. Codes are checked offline with Ed25519 (`licensing.py`). See [COMMERCIAL.md](COMMERCIAL.md).
+
+### Changed
+- **License: MIT → PolyForm Small Business 1.0.0.** Still free for individuals, producers selling their own music, and companies with fewer than 100 people and under US$1M revenue. Larger companies need a commercial license. 0.6.0 and earlier stay MIT. fl-studio-mcp's MIT notice now ships as `LICENSE-fl-studio-mcp`.
 
 ## [0.6.0] - 2026-10-29
 ### Added

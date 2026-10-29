@@ -2,7 +2,7 @@
 name = "agent_composer_plugin"
 version = "0.7.0"
 edition = "2021"
-license = "MIT"
+license-file = "../LICENSE"
 description = "Agent Composer as a CLAP plugin: the chat window inside FL Studio"
 publish = false
 

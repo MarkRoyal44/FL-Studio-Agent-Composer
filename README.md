@@ -90,10 +90,10 @@ More detail: [WHITEPAPER.md](WHITEPAPER.md) · [docs/ARCHITECTURE.md](docs/ARCHI
 
 ## Support
 
-Agent Composer is free. If it saved you a session, tip on Cash App: **[$CASHTAG](https://cash.app/$CASHTAG)**. A ⭐ on this repo helps other producers find it. Bugs and ideas go in [Issues](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/issues). The same links are in the app under **Settings › ♥ Support**.
+Agent Composer is free for producers and small studios. If it saved you a session, tip on Cash App: **[$Mark4949](https://cash.app/$Mark4949)**. A ⭐ on this repo helps other producers find it. Bugs and ideas go in [Issues](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/issues). The same links are in the app under **Settings › ♥ Support**.
 
 ## License
 
-[MIT](LICENSE). Fork it, change it, ship your own. The in-FL script started as a fork of [fl-studio-mcp](https://github.com/karl-andres/fl-studio-mcp) (MIT).
+[PolyForm Small Business 1.0.0](LICENSE): free for you, your beats and any studio or company with fewer than 100 people and under $1M a year in revenue. The code is open to read, fork and change. Bigger companies need a [commercial license](COMMERCIAL.md) (pay on Cash App, get an unlock code). Versions 0.6.0 and earlier stay MIT. The in-FL script started as a fork of [fl-studio-mcp](https://github.com/karl-andres/fl-studio-mcp) (MIT, see [LICENSE-fl-studio-mcp](LICENSE-fl-studio-mcp)).
 
 *FL Studio Agent Composer is an unofficial, independent project. It isn't affiliated with or endorsed by Image-Line. FL Studio is a trademark of Image-Line Software.*

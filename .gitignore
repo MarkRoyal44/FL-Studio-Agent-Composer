@@ -28,3 +28,10 @@ Takes/
 
 # Built installer
 dist/
+
+# License desk: the signing key and buyer ledger live outside this repo; never commit them
+license.json
+secret.key
+*.key.*
+ledger*.csv
+agent-composer-licensing/

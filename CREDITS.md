@@ -9,4 +9,4 @@
 | **calvinw & Karl Andres** | Authors of [fl-studio-mcp](https://github.com/karl-andres/fl-studio-mcp) (MIT), the starting point for the in-FL script. |
 | **Anthropic** | Claude and Claude Code, the default brain. |
 
-If you build on Agent Composer, a line crediting the people above is appreciated (the MIT license only requires keeping the license text).
+If you build on Agent Composer, a line crediting the people above is appreciated (the license only requires keeping its text and the Required Notice line).
