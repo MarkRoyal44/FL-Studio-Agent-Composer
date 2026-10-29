@@ -2,6 +2,12 @@
 
 All notable changes to Agent Composer. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [0.7.0] - 2026-10-29
+### Added
+- **A real FL Studio plugin.** `Agent Composer.clap` is a CLAP generator, so it shows up in FL's **Add** menu and Channel rack. Its plugin window is the chat itself (an embedded WebView2), and it starts the app if it isn't running. It makes no sound. Built in Rust with nih-plug (`plugin/`).
+- Setup installs the plugin to the per-user CLAP folder and adds that folder to FL's plugin search paths. After one **Options › Manage plugins › Find installed plugins**, it sits at the top of the Add menu next to FL's other favorites. Uninstall removes all of it.
+- **♥ Support** tab: tip on Cash App, star the repo, report a bug.
+
 ## [0.6.0] - 2026-10-29
 ### Added
 - **YOLO mode**: a YOLO button in the header turns approvals off, so changes go through without a card (like auto-approve in Claude Code). It glows red while on. Click again to turn approvals back on. Same setting as Settings › Safety & feel › Ask before every change. Cards already waiting get approved when YOLO is on.

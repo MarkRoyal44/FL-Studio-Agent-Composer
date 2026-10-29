@@ -183,7 +183,9 @@ textarea:focus-visible{outline:none}
 .steps code{font-family:var(--f-mono);font-size:12.5px;background:var(--panel-3);padding:1px 5px;border-radius:5px}
 .note code{font-family:var(--f-mono);font-size:12px;background:var(--panel-3);padding:1px 5px;border-radius:5px}
 .card{border:1px solid var(--line);background:var(--panel-2);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:12px;text-align:left;width:100%;transition:transform .25s var(--spring),border-color .15s,background-color .15s}
-button.card:hover{transform:translateY(-2px);border-color:var(--line-2)}
+button.card:hover,a.card:hover{transform:translateY(-2px);border-color:var(--line-2)}
+a.card{color:var(--ink);text-decoration:none;margin-bottom:8px}
+a.card.donate{border-color:#00d632}a.card.donate b{color:#00d632}
 .card b{display:block;font-size:14px}
 .card small{display:block;font-size:12px;color:var(--dim)}
 .card .grow{flex:1;min-width:0}
@@ -294,6 +296,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <button class="tab" role="tab" data-t="voice" aria-selected="false">Voice</button>
       <button class="tab" role="tab" data-t="project" aria-selected="false">Project</button>
       <button class="tab" role="tab" data-t="safety" aria-selected="false">Safety &amp; feel</button>
+      <button class="tab" role="tab" data-t="support" aria-selected="false">♥ Support</button>
     </div>
     <div class="body">
     <section class="sec" data-p="start" hidden>
@@ -307,7 +310,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <li><b>Your plugins</b> live in the VST Dock: flip presets, turn knobs, park favorites. The agent can turn the same knobs.</li>
         <li><b>Teach it you.</b> Drop lyrics, notes or a style guide into the Mini Brain and it reads them before it answers.</li>
       </ol>
-      <p class="note">Agent Composer docks inside FL's window and minimizes with it, but it isn't a plugin. Keep the small "Agent Composer" window in the taskbar open while you work.</p>
+      <p class="note">Want it inside FL? <i>Options › Manage plugins › Find installed plugins</i> once, then <b>Add › Agent Composer</b> opens this chat in a plugin window. The standalone window docks inside FL too.</p>
     </section>
     <section class="sec" data-p="brain">
       <div id="cells" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -383,6 +386,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <div class="toggle"><span>Sounds<small>Soft clicks and chimes</small></span><button class="sw" role="switch" aria-checked="true" data-k="sounds"><i></i></button></div>
       <p class="note">Every change the agent makes is one undo step in FL. <span id="ver"></span></p>
     </section>
+
+    <section class="sec" data-p="support" hidden>
+      <h3>Agent Composer is free</h3>
+      <p class="note">Free forever and open source under the MIT license: use it, fork it, ship your own. If it saved you a session, a tip keeps it growing.</p>
+      <a class="card donate" id="donate" target="_blank" rel="noopener"><span style="font-size:20px">💸</span><span class="grow"><b>Tip on Cash App</b><small id="donateTag"></small></span><span aria-hidden="true">›</span></a>
+      <a class="card" href="https://github.com/MarkRoyal44/FL-Studio-Agent-Composer" target="_blank" rel="noopener"><span style="font-size:20px">⭐</span><span class="grow"><b>Star it on GitHub</b><small>Free, and it helps other producers find it</small></span><span aria-hidden="true">›</span></a>
+      <a class="card" href="https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/issues/new" target="_blank" rel="noopener"><span style="font-size:20px">🐞</span><span class="grow"><b>Report a bug or ask for a feature</b><small>Opens a GitHub issue</small></span><span aria-hidden="true">›</span></a>
+      <p class="note">Made by Mark Royal · Tech-Ants LLC and Loboi Recordz LLC.</p>
+    </section>
     </div>
   </div>
 </div>
@@ -394,6 +406,8 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const H={"Content-Type":"application/json","X-Agent-Composer":"1"};
 let LIVE=false, busy=false, sessionId=null, pollT=null;
 let S={ask_before_changes:true,dock_to_fl:true,allow_save:false,mini_brain:true,model:"opus",brain:"claude-code",read_aloud:false,sounds:true,voice_server:""};
+const CASHTAG="$CASHTAG"; // the one place the tip link lives
+$("#donate").href="https://cash.app/"+CASHTAG;$("#donateTag").textContent=CASHTAG+" · any amount, no account needed to view";
 const store={get(k,d){try{const v=localStorage.getItem("ac."+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("ac."+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- sound: tiny WebAudio blips, quiet on purpose ---------- */

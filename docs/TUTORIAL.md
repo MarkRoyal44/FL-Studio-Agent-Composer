@@ -44,6 +44,6 @@ Want it to just go? Click **YOLO** in the header. It turns red and every change 
 - **Teach it you**: drop lyrics, notes or a style guide into **Mini Brain**. The agent reads them before it answers and tells you which document it used.
 
 ## Good to know
-- Agent Composer is a window that docks inside FL plus a controller script inside FL. It isn't a VST plugin. Don't want it docked? Settings › Safety & feel › **Dock inside FL**.
+- Want it as a plugin? In FL: *Options › Manage plugins › Find installed plugins* once, then **Add › Agent Composer**. The chat opens in its plugin window. The desktop window still works too and docks inside FL; turn that off in Settings › Safety & feel › **Dock inside FL**.
 - It can touch your FL project, and nothing else on your computer.
 - To remove it, go to **Settings › Apps › Agent Composer for FL Studio › Uninstall**.

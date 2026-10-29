@@ -40,7 +40,7 @@ You still need:
 
 **New here? Read the [2-minute tutorial](docs/TUTORIAL.md).** The same steps are in the app under **Settings › Start here**.
 
-> Agent Composer is not a VST. It's a small window that docks inside FL Studio's window, plus a controller script inside FL. Your own VSTs show up in its **VST Dock** tab.
+> **It's a plugin too.** Setup adds `Agent Composer.clap`, a CLAP plugin (the open plugin format FL 2024 reads, like VST). In FL: *Options › Manage plugins › Find installed plugins* once, then **Add › Agent Composer** opens the chat in a plugin window. It makes no sound. Prefer a separate window? The desktop shortcut opens one that docks inside FL. Your own VSTs show up in its **VST Dock** tab.
 
 ### Install from source (developers)
 
@@ -87,6 +87,10 @@ More detail: [WHITEPAPER.md](WHITEPAPER.md) · [docs/ARCHITECTURE.md](docs/ARCHI
 - FL's scripting API can't load a new plugin, import audio into the playlist, or write piano-roll notes from a MIDI script. That's why the dock works with plugins already in the project, and why notes come as a `.mid` file plus a one-click piano-roll script.
 - `set_tempo` uses an FL call marked experimental. The agent reads the project back to confirm.
 - Tested on Windows 11 with FL Studio 2024. macOS should work with the IAC Driver in place of loopMIDI, but it's untested.
+
+## Support
+
+Agent Composer is free. If it saved you a session, tip on Cash App: **[$CASHTAG](https://cash.app/$CASHTAG)**. A ⭐ on this repo helps other producers find it. Bugs and ideas go in [Issues](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/issues). The same links are in the app under **Settings › ♥ Support**.
 
 ## License
 
