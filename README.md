@@ -21,29 +21,35 @@
 | **Voice** | A mic button turns speech into a message (browser speech-to-text, nothing to install). Replies can be read aloud by the system voice or by your own voice server. |
 | **Any brain** | Plug in a brain under Settings › Brain: Claude Code, Claude API, Codex, OpenCode, DeepSeek or a local model through Ollama. Each one runs on **your own** account or key. Or paste your own, the way you'd paste an MCP server: any OpenAI-compatible API or any agent harness. See [docs/BRAINS.md](docs/BRAINS.md). |
 
+**New here?** Download the [one-file installer](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/releases/latest/download/AgentComposerSetup.exe) and follow the [2-minute tutorial](docs/TUTORIAL.md).
+
 The agent only gets the Agent Composer tools. It can't read your files (only the documents you put in its Mini Brain), run commands or browse the web.
 
-## Install (Windows)
+## Install (Windows): one download
 
-You need:
-1. **FL Studio 2024 or newer** (it has to support Python MIDI scripts).
-2. **A brain**: [Claude Code](https://docs.claude.com/en/docs/claude-code) (run `claude` once and sign in), or Codex, OpenCode, a DeepSeek key or Ollama. See [docs/BRAINS.md](docs/BRAINS.md).
-3. **[uv](https://docs.astral.sh/uv/)** and **Python 3.10+**.
-4. **A virtual MIDI port** so FL loads the script, for example [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) with a port named `loopMIDI Port`.
+1. Download **[AgentComposerSetup.exe](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/releases/latest/download/AgentComposerSetup.exe)**.
+2. Double-click it. If Windows says *"Windows protected your PC"*, click **More info › Run anyway** (the installer isn't code-signed yet).
+3. Answer **Y** when it offers loopMIDI. That's it.
 
-Then download it: **[latest release](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/releases/latest)** (Source code zip), or clone it:
+Setup puts Agent Composer in your user folder and needs no admin rights, apart from loopMIDI's own installer. It gets the free helpers it needs: **uv**, which brings its own Python, and **loopMIDI**, the virtual MIDI port FL loads the script on. It also copies the scripts into FL Studio and adds **Agent Composer** to your desktop and Start menu. Remove it any time from **Settings › Apps**. Your files in `Documents/Agent Composer` are kept.
+
+You still need:
+- **FL Studio 2024 or newer** (it has to support Python MIDI scripts).
+- **A brain**: Claude Code, Codex, OpenCode, a DeepSeek key, or a free local model with Ollama. The app's Brain tab says what each one needs. See [docs/BRAINS.md](docs/BRAINS.md).
+
+**New here? Read the [2-minute tutorial](docs/TUTORIAL.md).** The same steps are in the app under **Settings › Start here**.
+
+> Agent Composer is not a VST. It's a small window that sits next to FL Studio, plus a controller script inside FL. Your own VSTs show up in its **VST Dock** tab.
+
+### Install from source (developers)
 
 ```powershell
 git clone https://github.com/MarkRoyal44/FL-Studio-Agent-Composer.git
 cd FL-Studio-Agent-Composer
-powershell -ExecutionPolicy Bypass -File install.ps1
+powershell -ExecutionPolicy Bypass -File installer\setup.ps1
 ```
 
-In FL Studio, open **Options › MIDI settings**, select `loopMIDI Port`, set **Controller type** to **Agent Composer**, and enable it. The script usually picks the port up by itself.
-
-Then double-click **`start.bat`**. A small window opens. A green dot in the header means FL is linked.
-
-To remove it: `powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall`.
+`installer\build.ps1` builds the setup exe from the committed code with IExpress, which is built into Windows.
 
 ### Use it from Claude Code or Claudian instead
 

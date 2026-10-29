@@ -2,6 +2,17 @@
 
 All notable changes to Agent Composer. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [0.5.0] - 2026-10-29
+### Added
+- **One-file install**: `AgentComposerSetup.exe` on every release. It installs per user with no admin, gets uv (which brings Python) and loopMIDI, seeds a `loopMIDI Port` that starts with Windows, copies the FL scripts, adds desktop and Start menu shortcuts, and registers an uninstaller in Settings › Apps. Built from committed code with IExpress (`installer/build.ps1`).
+- **Start here** tab: a 2-minute tutorial inside the app. It opens by itself on first launch. Also in [docs/TUTORIAL.md](docs/TUTORIAL.md).
+- App icon.
+
+### Changed
+- Repo renamed to **FL-Studio-Agent-Composer** so FL Studio users can find it. Old links redirect.
+- `start.bat` runs on uv's own Python, so a separate Python install isn't needed.
+- Opening Agent Composer while it's already running brings up its window instead of starting a second copy.
+
 ## [0.4.0] - 2026-10-29
 ### Added
 - **Mini Brain**: the person's own documents, searchable by every brain. Settings › Mini Brain takes drag-and-drop uploads (.txt .md .docx .pdf .csv .lrc .srt .html .rtf and more) into `Documents/Agent Composer/Mini Brain`. Files dropped into that folder in Explorer count too.

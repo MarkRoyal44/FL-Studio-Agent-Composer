@@ -25,7 +25,7 @@ import brains  # noqa: E402
 import minibrain  # noqa: E402
 from ac import send, status  # noqa: E402
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 UI = os.path.join(ROOT, "app", "ui")
 PORT = int(os.environ.get("AGENT_COMPOSER_PORT", "47800"))
 
@@ -231,8 +231,23 @@ def open_window(url):
     webbrowser.open(url)
 
 
+def already_running():
+    # Windows lets a second server bind the same port, so ask first instead of starting twice.
+    import urllib.request
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:%d/api/health" % PORT, timeout=1) as r:
+            return json.load(r).get("ok") is True
+    except Exception:
+        return False
+
+
 def main():
     port = PORT
+    if already_running():
+        print("Agent Composer is already running at http://127.0.0.1:%d/" % PORT)
+        if "--no-open" not in sys.argv:
+            open_window("http://127.0.0.1:%d/" % PORT)
+        return
     for _ in range(20):
         try:
             srv = ThreadingHTTPServer(("127.0.0.1", port), Handler)

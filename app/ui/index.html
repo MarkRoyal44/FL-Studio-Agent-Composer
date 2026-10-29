@@ -174,6 +174,9 @@ textarea:focus-visible{outline:none}
 .sec{padding:16px 18px 20px;display:flex;flex-direction:column;gap:10px;animation:pop .3s var(--spring)}
 .sec h3{margin:6px 0 0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .note{font-size:13px;color:var(--dim);margin:0;line-height:1.55}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:9px;font-size:14px;line-height:1.5}
+.steps li::marker{color:var(--accent);font-weight:800}
+.steps code{font-family:var(--f-mono);font-size:12.5px;background:var(--panel-3);padding:1px 5px;border-radius:5px}
 .note code{font-family:var(--f-mono);font-size:12px;background:var(--panel-3);padding:1px 5px;border-radius:5px}
 .card{border:1px solid var(--line);background:var(--panel-2);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:12px;text-align:left;width:100%;transition:transform .25s var(--spring),border-color .15s,background-color .15s}
 button.card:hover{transform:translateY(-2px);border-color:var(--line-2)}
@@ -277,6 +280,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div class="shead"><h2>Settings</h2><span class="hatch" aria-hidden="true"></span><span class="sp"></span>
       <button class="hbtn" id="closeSet" aria-label="Close settings"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 4l12 12M16 4 4 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
     <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-t="start" aria-selected="false">Start here</button>
       <button class="tab" role="tab" data-t="brain" aria-selected="true">Brain</button>
       <button class="tab" role="tab" data-t="mini" aria-selected="false">Mini Brain</button>
       <button class="tab" role="tab" data-t="dock" aria-selected="false">VST Dock</button>
@@ -287,6 +291,19 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <button class="tab" role="tab" data-t="safety" aria-selected="false">Safety &amp; feel</button>
     </div>
     <div class="body">
+    <section class="sec" data-p="start" hidden>
+      <h3>Two minutes to your first beat</h3>
+      <ol class="steps">
+        <li><b>Open FL Studio.</b> The dot in the header turns green when FL is linked. If it stays gray: <i>Options › MIDI settings</i>, pick <code>loopMIDI Port</code>, set Controller type to <b>Agent Composer</b>, and enable it.</li>
+        <li><b>Pick a brain</b> in the Brain tab. Claude Code, Codex, DeepSeek, a free local model with Ollama, or your own. Its card says what's missing.</li>
+        <li><b>Just ask.</b> "Make it 140 BPM." "Write a dark trap melody in A minor." "What plugins am I using?" Type <code>/</code> for free instant commands like <code>/play</code> and <code>/undo</code>.</li>
+        <li><b>Approve.</b> Every change shows an <i>Okay to do this?</i> card first, and each one is a single undo in FL.</li>
+        <li><b>Melodies</b> land in the Notes tab as a <code>.mid</code> you drag into FL, or in the piano roll via <i>Tools › Scripting › Agent Composer</i>.</li>
+        <li><b>Your plugins</b> live in the VST Dock: flip presets, turn knobs, park favorites. The agent can turn the same knobs.</li>
+        <li><b>Teach it you.</b> Drop lyrics, notes or a style guide into the Mini Brain and it reads them before it answers.</li>
+      </ol>
+      <p class="note">Agent Composer is a window next to FL Studio, not a plugin inside it. Keep the small "Agent Composer" window in the taskbar open while you work.</p>
+    </section>
     <section class="sec" data-p="brain">
       <div id="cells" style="display:flex;flex-direction:column;gap:8px"></div>
       <h3>Model</h3>
@@ -676,6 +693,7 @@ function runDemo(text){setBusy(true);const p=plan(text),m=agentMsg(),dots=typing
   try{const c=new AbortController();setTimeout(()=>c.abort(),1500);const h=await (await fetch("/api/health",{signal:c.signal})).json();LIVE=!!h.ok;if(LIVE)$("#ver").textContent="Version "+h.version+"."}catch(e){LIVE=false}
   if(LIVE){const s=await api("/api/settings");if(!s.error)S={...S,...s}}else S={...S,...store.get("settings",{})};
   applySettings();welcome();refreshLink();if(LIVE)setInterval(refreshLink,8000);inp.focus();
+  if(!store.get("seen_start",false)){store.set("seen_start",true);openSet("start")}
 })();
 </script>
 </body>
