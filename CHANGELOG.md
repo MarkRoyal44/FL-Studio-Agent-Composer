@@ -2,6 +2,11 @@
 
 All notable changes to Agent Composer. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [0.6.0] - 2026-10-29
+### Added
+- **YOLO mode**: a YOLO button in the header turns approvals off, so changes go through without a card (like auto-approve in Claude Code). It glows red while on. Click again to turn approvals back on. Same setting as Settings › Safety & feel › Ask before every change. Cards already waiting get approved when YOLO is on.
+- **Docks inside FL**: the window becomes an owned window of FL's main window, the way FL's own plugin windows are. It sits inside FL's frame, floats over the project and minimizes with FL. Toggle: Settings › Safety & feel › Dock inside FL.
+
 ## [0.5.0] - 2026-10-29
 ### Added
 - **One-file install**: `AgentComposerSetup.exe` on every release. It installs per user with no admin, gets uv (which brings Python) and loopMIDI, seeds a `loopMIDI Port` that starts with Windows, copies the FL scripts, adds desktop and Start menu shortcuts, and registers an uninstaller in Settings › Apps. Built from committed code with IExpress (`installer/build.ps1`).

@@ -1,6 +1,6 @@
 # FL Studio Agent Composer
 
-**Talk to your FL Studio project.** Agent Composer is a chat window that sits next to FL Studio. You ask for a kick pattern, a tempo change, a melody or a look at your plugins, and an AI agent does it inside the open project. It asks first, and every change is one undo step.
+**Talk to your FL Studio project.** Agent Composer is a chat window that docks inside FL Studio. You ask for a kick pattern, a tempo change, a melody or a look at your plugins, and an AI agent does it inside the open project. It asks first, and every change is one undo step.
 
 > Created by **Mark Royal**. Built by **Jelly**, the Claude-powered agent of **Tech-Ants LLC**, for **Loboi Recordz LLC**. See [CREDITS.md](CREDITS.md).
 
@@ -13,7 +13,8 @@
 | | |
 |---|---|
 | **Chat** | Plain, Claudian-style chat with streaming replies, live tool rows and Stop. Past chats resume. `/` gives instant commands (`/play`, `/stop`, `/undo`, `/snapshot`, `/dock`, `/new`) that cost no AI tokens. |
-| **Approve before anything moves** | Every change shows a card: *Okay to do this?* Approve or "Not that". You can switch this off in Settings › Safety & feel. Saving the project is off unless you allow it. |
+| **Approve before anything moves** | Every change shows a card: *Okay to do this?* Approve or "Not that". Hit **YOLO** in the header to auto-approve (like auto-approve in Claude Code); hit it again to go back. Saving the project is off unless you allow it. |
+| **Docks inside FL** | The window pins itself inside FL's window, floats over your project and minimizes with FL, like FL's own plugin windows. Turn it off in Settings › Safety & feel. |
 | **VST Dock** | Every channel's plugin in one list: next/previous preset, live knobs, and 📌 parking for your go-to plugins. The agent can read and turn the same knobs. |
 | **Piano roll writer** | Ask for a melody, chords or a bassline. You get a `.mid` file to drag in, and the notes queue for the **Agent Composer** piano-roll script (Piano roll › Tools › Scripting). |
 | **Takes folder** | Drop vocal takes into `Documents/Agent Composer/Takes`. Play, rename, and ask the agent about them. |
@@ -39,7 +40,7 @@ You still need:
 
 **New here? Read the [2-minute tutorial](docs/TUTORIAL.md).** The same steps are in the app under **Settings › Start here**.
 
-> Agent Composer is not a VST. It's a small window that sits next to FL Studio, plus a controller script inside FL. Your own VSTs show up in its **VST Dock** tab.
+> Agent Composer is not a VST. It's a small window that docks inside FL Studio's window, plus a controller script inside FL. Your own VSTs show up in its **VST Dock** tab.
 
 ### Install from source (developers)
 

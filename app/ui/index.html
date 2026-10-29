@@ -47,6 +47,10 @@ button:active{transform:scale(.9)}
 @keyframes breathe{50%{box-shadow:0 0 0 5px rgba(127,214,160,.12)}}
 .linktxt{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .head .sp{flex:1}
+.yolo{border:1px solid var(--line);background:transparent;color:var(--dim);font:800 11px/1 var(--f-mono,monospace);letter-spacing:.08em;padding:6px 8px;border-radius:99px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.yolo i{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.yolo[aria-checked="true"]{border-color:#ff3b3b;color:#ff3b3b;background:rgba(255,59,59,.1)}
+.yolo[aria-checked="true"] i{background:#ff3b3b;box-shadow:0 0 8px #ff3b3b}
 .hbtn{width:34px;height:34px;border:0;border-radius:10px;background:transparent;display:grid;place-items:center;color:var(--dim);flex:none}
 .hbtn:hover{color:var(--ink);background:var(--panel-2)}
 .hbtn:hover svg{transform:rotate(var(--spin,0deg))}
@@ -252,6 +256,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div class="brand"><svg class="logo" width="20" height="20" viewBox="0 0 26 26" fill="none" aria-hidden="true"><path d="M13 1 25 8v10l-12 7L1 18V8z" stroke="#8cc8f2" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 16V10m3.3 8V8m3.4 10V8M18 16v-6" stroke="#8cc8f2" stroke-width="1.8" stroke-linecap="round"/></svg>Agent Composer</div>
     <span class="dot" id="dot"></span><span class="linktxt" id="linkTxt">connecting…</span>
     <span class="sp"></span>
+    <button class="yolo" id="yolo" role="switch" aria-checked="false" title="YOLO mode: approve every change automatically"><i></i>YOLO</button>
     <button class="hbtn" id="histBtn" title="Past chats" aria-label="Past chats"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3.5 10a6.5 6.5 0 1 0 2-4.7M3.5 3v3h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 6.5V10l2.5 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
     <button class="hbtn" id="newChat" title="New chat" aria-label="New chat"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
     <button class="hbtn" id="openSet" title="Settings" aria-label="Settings"><svg width="19" height="19" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.6"/><path d="M10 1.8v2.4M10 15.8v2.4M1.8 10h2.4M15.8 10h2.4M4.2 4.2l1.7 1.7M14.1 14.1l1.7 1.7M4.2 15.8l1.7-1.7M14.1 5.9l1.7-1.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
@@ -297,12 +302,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <li><b>Open FL Studio.</b> The dot in the header turns green when FL is linked. If it stays gray: <i>Options › MIDI settings</i>, pick <code>loopMIDI Port</code>, set Controller type to <b>Agent Composer</b>, and enable it.</li>
         <li><b>Pick a brain</b> in the Brain tab. Claude Code, Codex, DeepSeek, a free local model with Ollama, or your own. Its card says what's missing.</li>
         <li><b>Just ask.</b> "Make it 140 BPM." "Write a dark trap melody in A minor." "What plugins am I using?" Type <code>/</code> for free instant commands like <code>/play</code> and <code>/undo</code>.</li>
-        <li><b>Approve.</b> Every change shows an <i>Okay to do this?</i> card first, and each one is a single undo in FL.</li>
+        <li><b>Approve.</b> Every change shows an <i>Okay to do this?</i> card first, and each one is a single undo in FL. Click <b>YOLO</b> up top to skip the cards; click it again to bring them back.</li>
         <li><b>Melodies</b> land in the Notes tab as a <code>.mid</code> you drag into FL, or in the piano roll via <i>Tools › Scripting › Agent Composer</i>.</li>
         <li><b>Your plugins</b> live in the VST Dock: flip presets, turn knobs, park favorites. The agent can turn the same knobs.</li>
         <li><b>Teach it you.</b> Drop lyrics, notes or a style guide into the Mini Brain and it reads them before it answers.</li>
       </ol>
-      <p class="note">Agent Composer is a window next to FL Studio, not a plugin inside it. Keep the small "Agent Composer" window in the taskbar open while you work.</p>
+      <p class="note">Agent Composer docks inside FL's window and minimizes with it, but it isn't a plugin. Keep the small "Agent Composer" window in the taskbar open while you work.</p>
     </section>
     <section class="sec" data-p="brain">
       <div id="cells" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -372,7 +377,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     </section>
 
     <section class="sec" data-p="safety" hidden>
-      <div class="toggle"><span>Ask before every change<small>An Approve card shows up before anything in FL moves</small></span><button class="sw" role="switch" aria-checked="true" data-k="ask_before_changes"><i></i></button></div>
+      <div class="toggle"><span>Ask before every change<small>An Approve card shows up before anything in FL moves. Off is YOLO mode, the same as the YOLO button up top</small></span><button class="sw" role="switch" aria-checked="true" data-k="ask_before_changes"><i></i></button></div>
+      <div class="toggle"><span>Dock inside FL<small>The window sits inside FL's window, floats over it and minimizes with it</small></span><button class="sw" role="switch" aria-checked="true" data-k="dock_to_fl"><i></i></button></div>
       <div class="toggle"><span>Allow saving the project<small>Off means only you save</small></span><button class="sw" role="switch" aria-checked="false" data-k="allow_save"><i></i></button></div>
       <div class="toggle"><span>Sounds<small>Soft clicks and chimes</small></span><button class="sw" role="switch" aria-checked="true" data-k="sounds"><i></i></button></div>
       <p class="note">Every change the agent makes is one undo step in FL. <span id="ver"></span></p>
@@ -387,7 +393,7 @@ const log=$("#log"),inp=$("#inp");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const H={"Content-Type":"application/json","X-Agent-Composer":"1"};
 let LIVE=false, busy=false, sessionId=null, pollT=null;
-let S={ask_before_changes:true,allow_save:false,mini_brain:true,model:"opus",brain:"claude-code",read_aloud:false,sounds:true,voice_server:""};
+let S={ask_before_changes:true,dock_to_fl:true,allow_save:false,mini_brain:true,model:"opus",brain:"claude-code",read_aloud:false,sounds:true,voice_server:""};
 const store={get(k,d){try{const v=localStorage.getItem("ac."+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("ac."+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- sound: tiny WebAudio blips, quiet on purpose ---------- */
@@ -469,6 +475,7 @@ async function runLive(text){
   const seen=new Set();
   pollT=setInterval(async()=>{try{const list=await (await fetch("/api/approvals")).json();
     for(const a of list){if(seen.has(a.id))continue;seen.add(a.id);
+      if(!S.ask_before_changes){fetch("/api/approvals/"+a.id,{method:"POST",headers:H,body:JSON.stringify({approved:true})});continue}
       approvalCard(m,a,ok=>fetch("/api/approvals/"+a.id,{method:"POST",headers:H,body:JSON.stringify({approved:ok})}))}}catch(e){}},400);
   try{
     const res=await fetch("/api/chat",{method:"POST",headers:H,body:JSON.stringify({text,session_id:sessionId})});
@@ -586,13 +593,16 @@ $("#openSet").onclick=()=>openSet();$("#modelBtn").onclick=()=>openSet("brain");
 $("#scrim").addEventListener("click",e=>{if(e.target.id==="scrim")closeSet()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSet()});
 $(".tabs").addEventListener("click",e=>{if(e.target.dataset.t){pick(e.target.dataset.t);sfx.tick()}});
-$$(".sw[data-k]").forEach(s=>s.addEventListener("click",()=>{const v=s.getAttribute("aria-checked")!=="true";s.setAttribute("aria-checked",v);S[s.dataset.k]=v;save({[s.dataset.k]:v});sfx.tick()}));
+$$(".sw[data-k]").forEach(s=>s.addEventListener("click",()=>{const v=s.getAttribute("aria-checked")!=="true";s.setAttribute("aria-checked",v);S[s.dataset.k]=v;save({[s.dataset.k]:v});syncYolo();sfx.tick()}));
+function syncYolo(){$("#yolo").setAttribute("aria-checked",!S.ask_before_changes);$$('.sw[data-k="ask_before_changes"]').forEach(s=>s.setAttribute("aria-checked",!!S.ask_before_changes))}
+$("#yolo").onclick=()=>{save({ask_before_changes:!S.ask_before_changes});syncYolo();sfx.tick();
+  toast(S.ask_before_changes?"YOLO off: you approve every change":"YOLO on: changes go through without asking. Each one is still one undo in FL")};
 $$("[data-open]").forEach(b=>b.onclick=()=>LIVE?post("/api/open-folder",{which:b.dataset.open}):toast("Opens the folder in the desktop app"));
 
 async function api(u){try{return await (await fetch(u)).json()}catch(e){return{error:"offline"}}}
 async function post(u,b){try{return await (await fetch(u,{method:"POST",headers:H,body:JSON.stringify(b)})).json()}catch(e){return{error:"offline"}}}
 function save(ch){Object.assign(S,ch);LIVE?post("/api/settings",ch):store.set("settings",S)}
-function applySettings(){loadBrains();$$(".sw[data-k]").forEach(s=>s.setAttribute("aria-checked",!!S[s.dataset.k]));
+function applySettings(){loadBrains();$$(".sw[data-k]").forEach(s=>s.setAttribute("aria-checked",!!S[s.dataset.k]));syncYolo();
   $("#spk").classList.toggle("on",S.read_aloud);$("#ra").setAttribute("aria-checked",S.read_aloud);$("#voiceUrl").value=S.voice_server||""}
 
 /* VST dock */

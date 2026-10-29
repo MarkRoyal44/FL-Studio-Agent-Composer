@@ -11,6 +11,7 @@ AUDIO = (".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aif", ".aiff")
 
 DEFAULTS = {
     "ask_before_changes": True,
+    "dock_to_fl": True,
     "allow_save": False,
     "model": "opus",
     "brain": "claude-code",

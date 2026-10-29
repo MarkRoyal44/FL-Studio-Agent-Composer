@@ -4,7 +4,7 @@
 Download **[AgentComposerSetup.exe](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/releases/latest/download/AgentComposerSetup.exe)** and double-click it. If Windows warns you, click **More info › Run anyway**. Say **Y** to loopMIDI.
 
 ## 2. Open FL Studio, then Agent Composer
-Open FL Studio first, then **Agent Composer** from your desktop or Start menu. A small chat window opens next to FL. A minimized console opens with it: that's the app running, so leave it there.
+Open FL Studio first, then **Agent Composer** from your desktop or Start menu. A small chat window opens and docks inside FL's window: it floats over your project and minimizes with FL. A minimized console opens with it: that's the app running, so leave it there.
 
 The dot in the header turns **green** when FL is linked. If it stays gray:
 1. In FL, open **Options › MIDI settings**.
@@ -35,6 +35,8 @@ Type `/` for instant commands that cost nothing, such as `/play`, `/stop`, `/und
 ## 5. Approve
 Every change shows an **Okay to do this?** card. Click **Approve** or **Not that**. Each change is one undo step in FL.
 
+Want it to just go? Click **YOLO** in the header. It turns red and every change goes through without a card. Click it again to turn approvals back on.
+
 ## 6. Where things land
 - **Melodies and chords**: in **Notes** you get a `.mid` file to drag into FL. Or open the piano roll and go to **Tools › Scripting › Agent Composer** to drop the notes right in.
 - **Your plugins** are in the **VST Dock**: flip presets, turn knobs, park your favorites. The agent can turn the same knobs.
@@ -42,6 +44,6 @@ Every change shows an **Okay to do this?** card. Click **Approve** or **Not that
 - **Teach it you**: drop lyrics, notes or a style guide into **Mini Brain**. The agent reads them before it answers and tells you which document it used.
 
 ## Good to know
-- Agent Composer is a window next to FL plus a controller script inside FL. It isn't a VST plugin.
+- Agent Composer is a window that docks inside FL plus a controller script inside FL. It isn't a VST plugin. Don't want it docked? Settings › Safety & feel › **Dock inside FL**.
 - It can touch your FL project, and nothing else on your computer.
 - To remove it, go to **Settings › Apps › Agent Composer for FL Studio › Uninstall**.

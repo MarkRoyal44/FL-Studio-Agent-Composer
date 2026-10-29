@@ -25,7 +25,7 @@ import brains  # noqa: E402
 import minibrain  # noqa: E402
 from ac import send, status  # noqa: E402
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 UI = os.path.join(ROOT, "app", "ui")
 PORT = int(os.environ.get("AGENT_COMPOSER_PORT", "47800"))
 
@@ -191,7 +191,12 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/stop":
             return self._json({"stopped": stop_chat()})
         if p == "/api/settings":
-            return self._json(home.save_settings(b))
+            r = home.save_settings(b)
+            if "dock_to_fl" in b:
+                dock_window(bool(b["dock_to_fl"]))
+            return self._json(r)
+        if p == "/api/dock-window":
+            return self._json(dock_window(bool(b.get("on", True))))
         if p.startswith("/api/approvals/"):
             return self._json(answer(p.rsplit("/", 1)[1], b.get("approved")))
         if p == "/api/park":
@@ -227,8 +232,68 @@ def open_window(url):
     for exe in edge + chrome:
         if os.path.isfile(exe):
             subprocess.Popen([exe, "--app=" + url, "--window-size=460,820"])
+            if os.name == "nt" and home.settings().get("dock_to_fl", True):
+                threading.Thread(target=auto_dock, daemon=True).start()
             return
     webbrowser.open(url)
+
+
+# Dock: make the app window an "owned" window of FL's main window, the same way FL's own
+# plugin windows work. It then floats over FL, minimizes with FL and sits inside its frame.
+def _win_find(cls=None, title=None):
+    import ctypes
+    from ctypes import wintypes
+    u = ctypes.windll.user32
+    hit = []
+    proto = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def cb(h, _):
+        if not u.IsWindowVisible(h):
+            return True
+        t, c = ctypes.create_unicode_buffer(256), ctypes.create_unicode_buffer(256)
+        u.GetWindowTextW(h, t, 256)
+        u.GetClassNameW(h, c, 256)
+        if (cls is None or c.value == cls) and (title is None or t.value == title):
+            hit.append(h)
+        return True
+    u.EnumWindows(proto(cb), 0)
+    return hit[0] if hit else None
+
+
+def dock_window(on=True):
+    """Pin the Agent Composer window inside FL (on) or let it float free (off)."""
+    if os.name != "nt":
+        return {"docked": False, "error": "Docking works on Windows only."}
+    import ctypes
+    from ctypes import wintypes
+    u = ctypes.windll.user32
+    u.SetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_void_p]
+    me = _win_find("Chrome_WidgetWin_1", "Agent Composer")
+    if not me:
+        return {"docked": False, "error": "The Agent Composer window isn't open."}
+    flw = _win_find("TFruityLoopsMainForm") if on else None
+    if on and not flw:
+        return {"docked": False, "error": "FL Studio isn't open."}
+    u.SetWindowLongPtrW(me, -8, flw)  # GWLP_HWNDPARENT: the owner
+    if flw:
+        fr, mr = wintypes.RECT(), wintypes.RECT()
+        u.GetWindowRect(flw, ctypes.byref(fr))
+        u.GetWindowRect(me, ctypes.byref(mr))
+        w, h = mr.right - mr.left, mr.bottom - mr.top
+        h = min(h, fr.bottom - fr.top - 120)
+        u.SetWindowPos(me, 0, fr.right - w - 12, fr.top + 96, w, h, 0x0014)  # NOZORDER|NOACTIVATE
+    return {"docked": bool(flw)}
+
+
+def auto_dock():
+    # The window takes a moment to open; FL may open later still.
+    import time
+    for _ in range(60):
+        time.sleep(1)
+        if not home.settings().get("dock_to_fl", True):
+            return
+        if dock_window(True).get("docked"):
+            return
 
 
 def already_running():
@@ -247,6 +312,8 @@ def main():
         print("Agent Composer is already running at http://127.0.0.1:%d/" % PORT)
         if "--no-open" not in sys.argv:
             open_window("http://127.0.0.1:%d/" % PORT)
+            if home.settings().get("dock_to_fl", True):
+                auto_dock()  # this process exits next, so dock here rather than on a thread
         return
     for _ in range(20):
         try:
