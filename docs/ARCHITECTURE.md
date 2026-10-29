@@ -11,6 +11,7 @@ This is for developers who want to change Agent Composer. For the why, read the 
 | `ac.py` | any Python | Sends one command over the bridge and waits for the matching reply |
 | `mcp_server.py` | `uv run --script` (stdio) | MCP tools for the model; the approval gate |
 | `home.py` | imported | Settings, VST dock, takes, under `Documents/Agent Composer` |
+| `minibrain.py` | imported | Mini Brain: text extraction, cache and keyword search over the person's documents |
 | `midifile.py` | imported | Standard-library `.mid` writer |
 | `app/server.py` | Python, localhost | Serves the UI, runs the brain per turn, streams events, relays approvals |
 | `app/brains.py` | imported | Brain adapters (Claude, Codex, OpenCode, OpenAI-compatible, your own CLI) |
@@ -57,9 +58,9 @@ With approvals off (Settings › Safety & feel) or outside the app, `_ask` retur
 
 ## HTTP API (localhost)
 
-`GET` `/api/health` · `/api/brains` · `/api/snapshot` · `/api/settings` · `/api/approvals` · `/api/sessions` · `/api/dock` · `/api/params?channel=N` · `/api/takes` · `/api/midi` · `/takes/<file>`
+`GET` `/api/health` · `/api/brains` · `/api/snapshot` · `/api/settings` · `/api/approvals` · `/api/sessions` · `/api/dock` · `/api/params?channel=N` · `/api/takes` · `/api/minibrain` · `/api/midi` · `/takes/<file>`
 
-`POST` (needs `X-Agent-Composer: 1`) `/api/chat` · `/api/stop` · `/api/brains` · `/api/brains/remove` · `/api/brains/key` · `/api/settings` · `/api/approvals/<id>` · `/api/park` · `/api/unpark` · `/api/preset` · `/api/param` · `/api/transport` · `/api/undo` · `/api/rename-take` · `/api/open-folder`
+`POST` (needs `X-Agent-Composer: 1`) `/api/chat` · `/api/stop` · `/api/brains` · `/api/brains/remove` · `/api/brains/key` · `/api/settings` · `/api/approvals/<id>` · `/api/park` · `/api/unpark` · `/api/preset` · `/api/param` · `/api/transport` · `/api/undo` · `/api/rename-take` · `/api/minibrain/add` · `/api/minibrain/remove` · `/api/open-folder`
 
 Direct UI actions (preset, knob, transport, undo) skip the approval card because the person clicked them.
 

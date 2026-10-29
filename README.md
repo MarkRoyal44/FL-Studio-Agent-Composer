@@ -17,10 +17,11 @@
 | **VST Dock** | Every channel's plugin in one list: next/previous preset, live knobs, and 📌 parking for your go-to plugins. The agent can read and turn the same knobs. |
 | **Piano roll writer** | Ask for a melody, chords or a bassline. You get a `.mid` file to drag in, and the notes queue for the **Agent Composer** piano-roll script (Piano roll › Tools › Scripting). |
 | **Takes folder** | Drop vocal takes into `Documents/Agent Composer/Takes`. Play, rename, and ask the agent about them. |
+| **Mini Brain** | Your own notes in Settings › Mini Brain: drop in lyrics, song ideas, references, gear lists or a style guide (.txt .md .docx .pdf and more). Every brain can search them before it answers, and tells you which document it used. Files stay in `Documents/Agent Composer/Mini Brain`. See [docs/MINI_BRAIN.md](docs/MINI_BRAIN.md). |
 | **Voice** | A mic button turns speech into a message (browser speech-to-text, nothing to install). Replies can be read aloud by the system voice or by your own voice server. |
 | **Any brain** | Plug in a brain under Settings › Brain: Claude Code, Claude API, Codex, OpenCode, DeepSeek or a local model through Ollama. Each one runs on **your own** account or key. Or paste your own, the way you'd paste an MCP server: any OpenAI-compatible API or any agent harness. See [docs/BRAINS.md](docs/BRAINS.md). |
 
-The agent only gets the Agent Composer tools. It can't read your files, run commands or browse the web.
+The agent only gets the Agent Composer tools. It can't read your files (only the documents you put in its Mini Brain), run commands or browse the web.
 
 ## Install (Windows)
 

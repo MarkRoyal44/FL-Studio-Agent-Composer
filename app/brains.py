@@ -42,6 +42,16 @@ You act on the open project only through your agent-composer tools.
 - If a tool says the person rejected a change, accept it and ask what they want instead.
 - If FL isn't answering, tell them to open FL and pick Agent Composer in MIDI settings."""
 
+BRAIN_NOTE = """
+- The person keeps their own documents in a Mini Brain (lyrics, notes, references, style guides).
+  When a request could depend on their taste, their past work or something they wrote down,
+  call brain_search (or brain_list) first and use what you find. Say which document it came from."""
+
+
+def persona():
+    import minibrain
+    return PERSONA + (BRAIN_NOTE if minibrain.on() and minibrain.docs() else "")
+
 BUILTIN = [
     {"id": "claude-code", "kind": "claude", "name": "Claude Code", "sub": "Your Claude plan. Opus, Sonnet or Haiku.", "builtin": True},
     {"id": "claude-api", "kind": "claude", "name": "Claude API", "sub": "Pay as you go with your Anthropic key.",
@@ -231,7 +241,7 @@ def _ok(body):
 
 
 def _first_turn(text, session_id):
-    return text if session_id else PERSONA + "\n\n---\n\n" + text
+    return text if session_id else persona() + "\n\n---\n\n" + text
 
 
 def stop():
@@ -364,7 +374,7 @@ def run_claude(b, text, sid, emit):
     args = [exe, "-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
             "--mcp-config", mcp_config(), "--strict-mcp-config", "--tools", "",
             "--allowedTools", "mcp__" + SERVER, "--permission-mode", "dontAsk",
-            "--setting-sources", "project", "--append-system-prompt", PERSONA,
+            "--setting-sources", "project", "--append-system-prompt", persona(),
             "--model", home.settings().get("model") or "opus"]
     if sid:
         args += ["--resume", sid]
@@ -493,7 +503,7 @@ def run_openai(b, text, sid, emit):
         with open(_thread_path(sid), encoding="utf-8") as f:
             msgs = json.load(f)
     except (OSError, ValueError):
-        msgs = [{"role": "system", "content": PERSONA}]
+        msgs = [{"role": "system", "content": persona()}]
     msgs.append({"role": "user", "content": text})
     mcp = MCPClient()
     try:

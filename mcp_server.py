@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ac import send, status  # noqa: E402
 import home  # noqa: E402
 import midifile  # noqa: E402
+import minibrain  # noqa: E402
 
 from mcp.server.fastmcp import FastMCP  # noqa: E402
 
@@ -253,6 +254,32 @@ def rename_take(old_name: str, new_name: str) -> dict:
     """Rename a take in the Takes folder (keeps the file extension)."""
     no = _ask("Rename take %r to %r" % (old_name, new_name))
     return no or home.rename_take(old_name, new_name)
+
+
+# ---- Mini Brain: the person's own documents ----
+
+def _brain_off():
+    if not minibrain.on():
+        return {"success": False, "error": "Mini Brain is switched off in Settings."}
+
+
+@mcp.tool()
+def brain_list() -> dict:
+    """The person's own documents in their Mini Brain (lyrics, notes, references, gear lists, style guides).
+    Read-only. Check here when an answer could depend on their taste, their past work or their files."""
+    return _brain_off() or {"success": True, "folder": minibrain.folder(), "documents": minibrain.docs()}
+
+
+@mcp.tool()
+def brain_search(query: str, limit: int = 5) -> dict:
+    """Search the person's Mini Brain documents by keywords. Returns the best excerpts with document and part."""
+    return _brain_off() or {"success": True, "results": minibrain.search(query, max(1, min(int(limit), 10)))}
+
+
+@mcp.tool()
+def brain_read(document: str, part: int = 0) -> dict:
+    """Read one Mini Brain document, 4,000 characters per part. Use the part number from brain_search."""
+    return _brain_off() or minibrain.read(document, part)
 
 
 @mcp.tool()

@@ -3,6 +3,7 @@
 ## How Agent Composer limits the agent
 - On every brain, the model gets **only** the Agent Composer tools. Claude Code: `--tools "" --strict-mcp-config`. Codex: user config ignored, read-only sandbox, shell, apps and browser off. OpenCode: every built-in tool off. API brains: Agent Composer runs the loop and offers only the FL tools.
 - Brains run on **your own** accounts and keys. Keys pasted in Settings are saved in `Documents/Agent Composer/state/keys.json`, outside the repo, and are never sent back to the window.
+- The Mini Brain is **read-only** for the agent and limited to `Documents/Agent Composer/Mini Brain`. Uploads are reduced to a bare filename, so they can't land outside that folder. Excerpts go only to the brain you plugged in. Switch it off with Brain mode.
 - The FL script runs **only exact, allow-listed action names** and never evaluates code from a command.
 - Project changes wait for a human **Approve** in the app. The gate is enforced in the tool server.
 - Saving the project is off by default.

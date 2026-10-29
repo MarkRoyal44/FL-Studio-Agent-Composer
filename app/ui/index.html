@@ -232,6 +232,9 @@ select:focus,input:focus{border-color:var(--line-2);outline:none}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .param output{font-family:var(--f-mono);font-size:11px;text-align:right}
 .audio{width:100%;height:32px;margin-top:6px}
+.drop{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px dashed var(--line-2);border-radius:var(--r);padding:16px;cursor:pointer;text-align:center}
+.drop b{color:var(--accent)}.drop small{color:var(--dim);font-size:12.5px}
+.drop.over{border-color:var(--accent);background:var(--panel-3)}
 .empty{border:1px dashed var(--line-2);border-radius:var(--r);padding:16px;text-align:center;color:var(--dim);font-size:13px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel-3);border:1px solid var(--line-2);border-radius:99px;padding:8px 16px;font-size:13px;z-index:40;
   animation:toast 2.4s var(--spring) forwards;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap}
@@ -275,6 +278,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <button class="hbtn" id="closeSet" aria-label="Close settings"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 4l12 12M16 4 4 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-t="brain" aria-selected="true">Brain</button>
+      <button class="tab" role="tab" data-t="mini" aria-selected="false">Mini Brain</button>
       <button class="tab" role="tab" data-t="dock" aria-selected="false">VST Dock</button>
       <button class="tab" role="tab" data-t="notes" aria-selected="false">Notes</button>
       <button class="tab" role="tab" data-t="takes" aria-selected="false">Takes</button>
@@ -298,6 +302,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <textarea id="brainJson" class="paste" rows="7" spellcheck="false" aria-label="Brain JSON"></textarea>
         <div class="row" style="justify-content:flex-end"><button class="btn primary" id="brainAdd">Plug it in</button></div>
       </details>
+    </section>
+
+    <section class="sec" data-p="mini" hidden>
+      <p class="note">Your own notes, on your computer. Drop in lyrics, song ideas, references, gear lists or a style guide, and whichever brain is plugged in can search them before it answers.</p>
+      <div class="toggle"><span>Brain mode<small>Lets the agent read your Mini Brain documents</small></span><button class="sw" role="switch" aria-checked="true" data-k="mini_brain"><i></i></button></div>
+      <label class="drop" id="drop"><input type="file" id="miniFile" multiple accept=".txt,.md,.markdown,.csv,.tsv,.json,.lrc,.srt,.vtt,.log,.ini,.yaml,.yml,.html,.htm,.xml,.rtf,.docx,.pdf" hidden>
+        <b>＋ Add documents</b><small>Drop files here or tap to pick · .txt .md .docx .pdf .csv .lrc and more</small></label>
+      <div id="minis" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div class="rowbtns"><button class="btn sm" data-open="minibrain">Open Mini Brain folder</button><button class="btn sm" id="reMini">Refresh</button></div>
+      <p class="note">Nothing here leaves your computer except the excerpts a brain reads while answering you, and only to the brain you plugged in.</p>
     </section>
 
     <section class="sec" data-p="dock" hidden>
@@ -356,7 +370,7 @@ const log=$("#log"),inp=$("#inp");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const H={"Content-Type":"application/json","X-Agent-Composer":"1"};
 let LIVE=false, busy=false, sessionId=null, pollT=null;
-let S={ask_before_changes:true,allow_save:false,model:"opus",brain:"claude-code",read_aloud:false,sounds:true,voice_server:""};
+let S={ask_before_changes:true,allow_save:false,mini_brain:true,model:"opus",brain:"claude-code",read_aloud:false,sounds:true,voice_server:""};
 const store={get(k,d){try{const v=localStorage.getItem("ac."+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("ac."+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- sound: tiny WebAudio blips, quiet on purpose ---------- */
@@ -550,7 +564,7 @@ $("#modelSeg").addEventListener("click",e=>{const m=e.target.dataset.m;if(!m)ret
 function openSet(tab){$("#scrim").hidden=false;pick(tab||store.get("tab","brain"));sfx.open()}
 function closeSet(){if($("#scrim").hidden)return;$("#scrim").hidden=true;sfx.close()}
 function pick(t){$$(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));$$(".sec").forEach(s=>s.hidden=s.dataset.p!==t);store.set("tab",t);
-  ({brain:loadBrains,dock:loadDock,notes:loadMidi,takes:loadTakes,project:loadProject})[t]?.()}
+  ({brain:loadBrains,mini:loadMini,dock:loadDock,notes:loadMidi,takes:loadTakes,project:loadProject})[t]?.()}
 $("#openSet").onclick=()=>openSet();$("#modelBtn").onclick=()=>openSet("brain");$("#closeSet").onclick=closeSet;
 $("#scrim").addEventListener("click",e=>{if(e.target.id==="scrim")closeSet()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSet()});
@@ -580,6 +594,23 @@ $("#chans").addEventListener("click",async e=>{const b=e.target.closest("button"
     box.innerHTML=ps.length?ps.map(p=>`<label class="param"><span title="${esc(p.name)}">${esc(p.name)}</span><input type="range" min="0" max="1" step="0.01" value="${+p.value||0}" data-ch="${b.dataset.knobs}" data-p="${p.index}"><output>${Math.round((+p.value||0)*100)}</output></label>`).join(""):`<div class="note">This plugin doesn't share its knobs.</div>`;box.hidden=false;sfx.open()}});
 $("#chans").addEventListener("input",e=>{if(e.target.type!=="range")return;e.target.nextElementSibling.textContent=Math.round(e.target.value*100)});
 $("#chans").addEventListener("change",e=>{if(e.target.type!=="range")return;LIVE&&post("/api/param",{channel:+e.target.dataset.ch,param:+e.target.dataset.p,value:+e.target.value});sfx.tick()});
+
+/* mini brain */
+async function loadMini(){const d=LIVE?await api("/api/minibrain"):DEMO.mini;
+  $("#minis").innerHTML=(d.documents||[]).length?d.documents.map(x=>`<div class="card ${x.readable?"":"warn"}"><span style="font-size:18px">📄</span><span class="grow"><b>${esc(x.name)}</b><small>${x.readable?`${x.kb} KB · ${x.chars.toLocaleString()} characters`:"No text came out. Save it as .txt or .docx"}</small></span><button class="x" data-rmdoc="${esc(x.name)}" title="Remove" aria-label="Remove ${esc(x.name)}">×</button></div>`).join(""):`<div class="empty">Empty for now. Add your lyrics or a style guide and ask “write a hook in my style”.</div>`}
+function b64(file){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]||"");r.onerror=no;r.readAsDataURL(file)})}
+async function addDocs(files){for(const f of files){
+  if(!LIVE){DEMO.mini.documents.push({name:f.name,kb:Math.round(f.size/1024),chars:f.size,readable:true});continue}
+  const r=await post("/api/minibrain/add",{name:f.name,data:await b64(f)});
+  if(!r.success){sfx.no();toast(r.error||"Couldn't add "+f.name)}else if(!r.readable){sfx.no();toast(r.note)}else{sfx.ok();toast("Added "+r.name)}}
+  loadMini()}
+$("#miniFile").onchange=e=>{addDocs([...e.target.files]);e.target.value=""};
+["dragenter","dragover"].forEach(t=>$("#drop").addEventListener(t,e=>{e.preventDefault();$("#drop").classList.add("over")}));
+["dragleave","drop"].forEach(t=>$("#drop").addEventListener(t,e=>{e.preventDefault();$("#drop").classList.remove("over")}));
+$("#drop").addEventListener("drop",e=>addDocs([...e.dataTransfer.files]));
+$("#reMini").onclick=()=>{loadMini();sfx.tick()};
+$("#minis").addEventListener("click",async e=>{const n=e.target.dataset.rmdoc;if(!n)return;
+  if(LIVE)await post("/api/minibrain/remove",{name:n});else DEMO.mini.documents=DEMO.mini.documents.filter(x=>x.name!==n);sfx.close();toast("Removed "+n);loadMini()});
 
 /* notes + takes */
 async function loadMidi(){const d=LIVE?await api("/api/midi"):DEMO.midi;
@@ -620,6 +651,7 @@ const DEMO={state:{tempo:140,pattern:"1 · Intro",playing:false},
   dock:{parked:[{name:"Serum",note:"go-to lead"}],channels:[{channel:0,channel_name:"Kick",plugin:"FPC"},{channel:1,channel_name:"Lead",plugin:"Serum"},{channel:2,channel_name:"Keys",plugin:"FL Keys"},{channel:3,channel_name:"808",plugin:"Transistor Bass"}]},
   params:{params:[{index:0,name:"Cutoff",value:.62},{index:1,name:"Resonance",value:.2},{index:2,name:"Attack",value:.05},{index:3,name:"Release",value:.4}]},
   midi:{files:[{name:"Sad piano in A minor.mid",modified:now-3600}]},
+  mini:{documents:[{name:"My lyrics 2026.docx",kb:48,chars:21400,readable:true},{name:"Sound guide.md",kb:3,chars:2900,readable:true}]},
   takes:{takes:[{name:"verse take 3.wav",kb:5120,modified:now-600},{name:"hook double.wav",kb:3900,modified:now-7200}]}};
 function demoSnap(c){return c==="/snapshot"?`**Demo project** · ${DEMO.state.tempo} BPM · pattern ${DEMO.state.pattern} · ${DEMO.state.playing?"playing":"stopped"}`:"Done. (demo)"}
 function plan(t){t=t.toLowerCase();let m;

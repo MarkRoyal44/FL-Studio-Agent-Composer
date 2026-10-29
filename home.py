@@ -1,4 +1,4 @@
-"""Where Agent Composer keeps the person's things: settings, the VST dock, MIDI files and voice takes.
+"""Where Agent Composer keeps the person's things: settings, the VST dock, MIDI files, voice takes and the Mini Brain.
 
 Default home is Documents/Agent Composer. Set AGENT_COMPOSER_HOME to move it.
 """
@@ -15,6 +15,7 @@ DEFAULTS = {
     "model": "opus",
     "brain": "claude-code",
     "brain_models": {},
+    "mini_brain": True,
     "read_aloud": False,
     "sounds": True,
     "voice_server": "",

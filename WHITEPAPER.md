@@ -120,7 +120,8 @@ A producer can also paste their own brain the way they would paste an MCP server
 3. **Local speech-to-text** (Whisper-class) through the voice server socket.
 4. **Arrangement awareness:** reading playlist clips and markers for song-structure requests.
 5. **Takes intelligence:** automatic take naming and comparing takes by loudness and timing.
-6. **Shared presets:** export and import a producer's parked dock and safety settings.
+6. **Mini Brain search by meaning:** optional local embeddings next to the keyword search, with no extra cloud service.
+7. **Shared presets:** export and import a producer's parked dock and safety settings.
 
 ## 9. Credits
 

@@ -22,9 +22,10 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "app"))
 import home  # noqa: E402
 import brains  # noqa: E402
+import minibrain  # noqa: E402
 from ac import send, status  # noqa: E402
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 UI = os.path.join(ROOT, "app", "ui")
 PORT = int(os.environ.get("AGENT_COMPOSER_PORT", "47800"))
 
@@ -132,6 +133,8 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/brains":
             return self._json({"brains": [brains.public(x) for x in brains.all_brains()],
                                "plugged": home.settings().get("brain"), "kinds": list(brains.KINDS)})
+        if p == "/api/minibrain":
+            return self._json({"folder": minibrain.folder(), "on": minibrain.on(), "documents": minibrain.docs()})
         if p == "/api/sessions":
             return self._json(home._read("sessions.json", []))
         if p == "/api/dock":
@@ -181,6 +184,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(brains.remove_custom(str(b.get("id", ""))))
         if p == "/api/brains/key":
             return self._json(brains.set_key(str(b.get("id", "")), str(b.get("key", ""))))
+        if p == "/api/minibrain/add":
+            return self._json(minibrain.add(b.get("name"), b.get("data")))
+        if p == "/api/minibrain/remove":
+            return self._json(minibrain.remove(b.get("name")))
         if p == "/api/stop":
             return self._json({"stopped": stop_chat()})
         if p == "/api/settings":
@@ -204,7 +211,7 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/rename-take":
             return self._json(home.rename_take(str(b.get("old", "")), str(b.get("new", ""))))
         if p == "/api/open-folder":
-            which = {"takes": "Takes", "midi": "MIDI"}.get(b.get("which"), "")
+            which = {"takes": "Takes", "midi": "MIDI", "minibrain": "Mini Brain"}.get(b.get("which"), "")
             target = home.path(which) if which else home.HOME
             if os.name == "nt":
                 os.startfile(target)  # noqa: S606 - opens the person's own folder in Explorer
