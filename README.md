@@ -30,10 +30,10 @@ You need:
 3. **[uv](https://docs.astral.sh/uv/)** and **Python 3.10+**.
 4. **A virtual MIDI port** so FL loads the script, for example [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) with a port named `loopMIDI Port`.
 
-Then:
+Then download it: **[latest release](https://github.com/MarkRoyal44/agent-composer/releases/latest)** (Source code zip), or clone it:
 
 ```powershell
-git clone https://github.com/<you>/agent-composer.git
+git clone https://github.com/MarkRoyal44/agent-composer.git
 cd agent-composer
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
