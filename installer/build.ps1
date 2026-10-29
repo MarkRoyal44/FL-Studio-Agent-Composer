@@ -2,8 +2,10 @@
 #   powershell -ExecutionPolicy Bypass -File installer\build.ps1
 $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$work = Join-Path $repo "dist\build"
+# IExpress can't handle spaces in paths, so build in a plain temp folder and copy the exe out.
+$work = Join-Path $env:TEMP "ac-iexpress"
 $exe = Join-Path $repo "dist\AgentComposerSetup.exe"
+$tmpExe = Join-Path $work "AgentComposerSetup.exe"
 Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $work | Out-Null
 
@@ -28,7 +30,7 @@ RebootMode=N
 InstallPrompt=
 DisplayLicense=
 FinishMessage=
-TargetName=$exe
+TargetName=$tmpExe
 FriendlyName=Agent Composer setup
 AppLaunched=cmd /c run.cmd
 PostInstallCmd=<None>
@@ -48,8 +50,9 @@ SourceFiles0=$work\
 "@
 $sedPath = Join-Path $work "setup.sed"
 Set-Content $sedPath $sed -Encoding ascii
-Remove-Item $exe -ErrorAction SilentlyContinue
 Start-Process "$env:WINDIR\System32\iexpress.exe" -ArgumentList "/N", "/Q", $sedPath -Wait -NoNewWindow
-if (-not (Test-Path $exe)) { throw "IExpress didn't make the exe." }
+if (-not (Test-Path $tmpExe)) { throw "IExpress didn't make the exe." }
+New-Item -ItemType Directory -Force (Split-Path $exe) | Out-Null
+Copy-Item $tmpExe $exe -Force
 Remove-Item $work -Recurse -Force
 "Built $exe ({0:N0} KB)" -f ((Get-Item $exe).Length / 1KB)
