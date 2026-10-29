@@ -1,4 +1,5 @@
 # name=Agent Composer
+# supportedDevices=loopMIDI Port
 # url=https://github.com/karl-andres/fl-studio-mcp
 
 """
