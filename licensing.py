@@ -5,9 +5,11 @@ than 100 people and under US$1M a year in revenue. Bigger companies buy a commer
 and get a code. The code is signed with Ed25519 (RFC 8032, written out below with the standard
 library); this file holds only the public key, so it can check codes but never make them.
 
-Code shape: AC1.<payload>.<signature>, both base64url. The payload is JSON: {"to", "id", "on"}.
+Code shape: AC1.<payload>.<signature>, both base64url. The payload is JSON: {"to", "id", "on", "until"}.
+"until" is the last day the license covers (monthly or yearly plans); a code without it never ends.
 """
 import base64
+import datetime
 import hashlib
 import json
 import os
@@ -126,8 +128,11 @@ def _unb64(s):
     return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
 
 
-def make_code(secret, to, lid, on):
-    payload = json.dumps({"to": to, "id": lid, "on": on}, separators=(",", ":")).encode()
+def make_code(secret, to, lid, on, until=None):
+    lic = {"to": to, "id": lid, "on": on}
+    if until:
+        lic["until"] = until
+    payload = json.dumps(lic, separators=(",", ":")).encode()
     return "AC1." + _b64(payload) + "." + _b64(sign(secret, payload))
 
 
@@ -153,15 +158,20 @@ def current():
             lic = read_code(json.load(f).get("code"))
     except (OSError, ValueError, AttributeError):
         lic = None
-    if lic:
-        return {"commercial": True, "to": lic.get("to"), "id": lic.get("id"), "on": lic.get("on")}
-    return {"commercial": False}
+    if not lic:
+        return {"commercial": False}
+    out = {"to": lic.get("to"), "id": lic.get("id"), "on": lic.get("on"), "until": lic.get("until")}
+    if out["until"] and out["until"] < datetime.date.today().isoformat():
+        return {"commercial": False, "expired": True, **out}
+    return {"commercial": True, **out}
 
 
 def activate(code):
     lic = read_code(code)
     if not lic:
         return {"error": "That code didn't check out. Paste the whole thing, starting with AC1."}
+    if lic.get("until") and lic["until"] < datetime.date.today().isoformat():
+        return {"error": "That code ended on " + lic["until"] + ". Renew to get a new one."}
     with open(_file(), "w", encoding="utf-8") as f:
         json.dump({"code": "".join(str(code).split())}, f)
     return current()

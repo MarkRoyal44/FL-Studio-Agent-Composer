@@ -617,7 +617,7 @@ $("#yolo").onclick=()=>{save({ask_before_changes:!S.ask_before_changes});syncYol
 $$("[data-open]").forEach(b=>b.onclick=()=>LIVE?post("/api/open-folder",{which:b.dataset.open}):toast("Opens the folder in the desktop app"));
 
 async function api(u){try{return await (await fetch(u)).json()}catch(e){return{error:"offline"}}}
-function showLic(l){if(!l||!l.commercial)return;$("#licNote").innerHTML="";$("#licNote").append("✅ Commercial license "+l.id+": licensed to ",Object.assign(document.createElement("b"),{textContent:l.to}),". Thank you.");$("#licRow").hidden=true}
+function showLic(l){if(!l)return;if(l.expired){$("#licNote").textContent="⏰ Commercial license "+l.id+" ended "+l.until+". Renew on Cash App and paste the new code here.";$("#licRow").hidden=false;return}if(!l.commercial)return;$("#licNote").innerHTML="";$("#licNote").append("✅ Commercial license "+l.id+": licensed to ",Object.assign(document.createElement("b"),{textContent:l.to}),l.until?", through "+l.until+". Thank you.":". Thank you.");$("#licRow").hidden=true}
 api("/api/license").then(showLic);
 $("#licSave").onclick=async()=>{const r=await post("/api/license",{code:$("#licTxt").value});if(r.error)toast(r.error==="offline"?"Open the app to unlock":r.error);else{showLic(r);toast("Commercial license unlocked")}};
 async function post(u,b){try{return await (await fetch(u,{method:"POST",headers:H,body:JSON.stringify(b)})).json()}catch(e){return{error:"offline"}}}
