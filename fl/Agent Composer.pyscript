@@ -1,0 +1,46 @@
+"""Agent Composer: paste the notes the agent wrote into this piano roll.
+
+Lives in Documents/Image-Line/FL Studio/Settings/Piano roll scripts/.
+Open a channel's piano roll, then Tools > Scripting > Agent Composer.
+"""
+import json
+import os
+
+import flpianoroll as flp
+
+NOTES = os.path.join(os.environ.get("USERPROFILE", "~"), "Documents", "Image-Line", "FL Studio", "Settings",
+                     "Hardware", "AgentComposer", "bridge", "notes.json")
+
+
+def _load():
+    try:
+        with open(NOTES, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def createDialog():
+    data = _load()
+    what = "%s (%d notes)" % (data["name"], len(data["notes"])) if data else "Nothing queued yet. Ask the agent for notes first."
+    form = flp.ScriptDialog("Agent Composer", "Paste: " + what)
+    form.AddInputCombo("Mode", ["Add to what's here", "Replace everything"], 0)
+    form.AddInputKnobInt("Octave shift", 0, -3, 3)
+    return form
+
+
+def apply(form):
+    data = _load()
+    if not data:
+        return
+    if form.GetInputValue("Mode") == 1:
+        flp.score.clearNotes(True)
+    shift = form.GetInputValue("Octave shift") * 12
+    ppq = flp.score.PPQ
+    for n in data["notes"]:
+        note = flp.Note()
+        note.number = max(0, min(127, int(n["pitch"]) + shift))
+        note.time = int(round(float(n.get("start", 0)) * ppq))
+        note.length = max(1, int(round(float(n.get("length", 1)) * ppq)))
+        note.velocity = max(0.0, min(1.0, float(n.get("velocity", 0.8))))
+        flp.score.addNote(note)

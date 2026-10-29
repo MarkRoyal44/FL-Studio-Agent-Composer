@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Agent Composer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Agent Composer UI. One plain chat pane; everything else lives behind the gear.
+   Calm grays so it sits next to any FL skin, one soft sky accent, a warm amber for "needs you".
+   Single dark look by design: it lives beside a DAW. */
+:root{
+  color-scheme:dark;
+  --bg:#1b1c1f; --panel:#222327; --panel-2:#2a2b30; --panel-3:#33343a; --line:#3a3b41; --line-2:#4a4b52;
+  --ink:#ecebe8; --dim:#a3a19c; --faint:#77767a;
+  --accent:#8cc8f2; --accent-ink:#11202b; --warm:#f4b56a; --ok:#7fd6a0; --bad:#f08a8a;
+  --f-brand:"Oxanium","Segoe UI",system-ui,sans-serif;
+  --f-body:"Nunito","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --r:12px;
+}
+html,body{height:100%;margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;overflow:hidden;box-sizing:border-box;
+  padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(140,200,242,.06),transparent 70%)}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+/* juice: every button squashes on press and springs back */
+button{transition:transform .25s var(--spring),background-color .15s,color .15s,border-color .15s,box-shadow .2s}
+button:active{transform:scale(.9)}
+
+.pane{height:100%;max-width:680px;margin:0 auto;display:grid;grid-template-rows:auto 1fr auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative;
+  box-shadow:0 10px 40px rgba(0,0,0,.35)}
+
+/* header */
+.head{display:flex;align-items:center;gap:8px;padding:10px 10px 10px 14px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-brand);font-weight:700;letter-spacing:.14em;font-size:12.5px;text-transform:uppercase;display:flex;align-items:center;gap:9px;white-space:nowrap}
+.logo{transition:transform .5s var(--spring)}
+.brand:hover .logo{transform:rotate(-12deg) scale(1.1)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none;position:relative}
+.dot.live{background:var(--ok);animation:breathe 2.6s ease-in-out infinite}
+.dot.warn{background:var(--warm)}
+@keyframes breathe{50%{box-shadow:0 0 0 5px rgba(127,214,160,.12)}}
+.linktxt{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.head .sp{flex:1}
+.hbtn{width:34px;height:34px;border:0;border-radius:10px;background:transparent;display:grid;place-items:center;color:var(--dim);flex:none}
+.hbtn:hover{color:var(--ink);background:var(--panel-2)}
+.hbtn:hover svg{transform:rotate(var(--spin,0deg))}
+.hbtn svg{transition:transform .45s var(--spring)}
+#openSet{--spin:60deg} #newChat{--spin:90deg}
+
+/* history drawer */
+.hist{position:absolute;top:56px;right:10px;width:min(300px,calc(100% - 20px));max-height:60%;overflow-y:auto;background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r);
+  padding:6px;z-index:5;box-shadow:0 12px 30px rgba(0,0,0,.4);transform-origin:top right;animation:pop .28s var(--spring)}
+.hist button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;border-radius:8px;font-size:13.5px}
+.hist button:hover{background:var(--panel-3)}
+.hist small{display:block;color:var(--faint);font-size:11px}
+.hist .empty{padding:10px;color:var(--dim);font-size:13px}
+
+/* chat */
+.log{overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px;min-height:0;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent;scroll-behavior:smooth}
+.msg{display:flex;flex-direction:column;gap:8px;min-width:0;line-height:1.6;overflow-wrap:anywhere;animation:pop .38s var(--spring) both}
+@keyframes pop{0%{opacity:0;transform:translateY(10px) scale(.96)}100%{opacity:1;transform:none}}
+.msg.user{align-self:flex-end;max-width:85%;background:var(--panel-3);padding:9px 14px;border-radius:16px 16px 4px 16px;transform-origin:bottom right}
+.msg.agent{max-width:100%;transform-origin:top left}
+.msg.agent .who{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--accent);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.msg.sys{align-self:center;font-size:12.5px;color:var(--dim);background:var(--panel-2);padding:5px 12px;border-radius:99px}
+.md p{margin:0 0 .5em}.md p:last-child{margin:0}
+.md ul,.md ol{margin:.2em 0 .5em;padding-left:1.3em}
+.md code{font-family:var(--f-mono);font-size:12.5px;background:var(--panel-3);padding:1px 5px;border-radius:5px;color:var(--accent)}
+.md pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;overflow-x:auto;margin:.4em 0}
+.md pre code{background:none;padding:0;color:var(--ink)}
+.caret{display:inline-block;width:7px;height:1em;background:var(--accent);vertical-align:-2px;margin-left:2px;border-radius:2px;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.acts{display:flex;gap:4px;opacity:0;transition:opacity .2s}
+.msg.agent:hover .acts{opacity:1}
+.acts button{border:0;background:transparent;color:var(--faint);font-size:11.5px;padding:2px 6px;border-radius:6px}
+.acts button:hover{color:var(--ink);background:var(--panel-2)}
+
+/* tool rows */
+.tool{font-family:var(--f-mono);font-size:12px;color:var(--dim);display:flex;gap:8px;align-items:center;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;
+  animation:pop .3s var(--spring) both;position:relative}
+.tool .args{color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+.tool .st{width:16px;height:16px;flex:none;display:grid;place-items:center}
+.spin{width:12px;height:12px;border:2px solid var(--line-2);border-top-color:var(--accent);border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.tool.ok .st{color:var(--ok);animation:check .45s var(--spring)}
+.tool.no .st{color:var(--bad)}
+.tool.no{animation:shake .35s}
+@keyframes check{0%{transform:scale(0)}100%{transform:scale(1)}}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.spark{position:absolute;width:5px;height:5px;border-radius:50%;pointer-events:none;animation:fly .6s ease-out forwards}
+@keyframes fly{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+
+/* approval card: warm, because it needs you */
+.approve{border:1px solid rgba(244,181,106,.5);background:linear-gradient(180deg,rgba(244,181,106,.09),rgba(244,181,106,.03));border-radius:var(--r);padding:11px 12px;display:flex;flex-direction:column;gap:9px;
+  animation:nudge .6s var(--spring) both}
+@keyframes nudge{0%{opacity:0;transform:scale(.9)}60%{transform:scale(1.02)}100%{opacity:1;transform:none}}
+.approve .q{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--warm);text-transform:uppercase}
+.approve .what{font-size:14.5px}
+.approve .detail{font-family:var(--f-mono);font-size:12px;color:var(--dim);overflow-x:auto;white-space:nowrap}
+.approve .row{display:flex;gap:8px}
+.approve.done{opacity:.7;pointer-events:none;padding:7px 12px;gap:2px}
+.approve.done .row,.approve.done .detail{display:none}
+.btn{border:1px solid var(--line-2);background:var(--panel-3);padding:7px 16px;border-radius:99px;font-weight:700;font-size:13px}
+.btn:hover{border-color:var(--dim)}
+.btn.go{border-color:transparent;background:var(--accent);color:var(--accent-ink)}
+.btn.go:hover{box-shadow:0 0 0 4px rgba(140,200,242,.18)}
+.btn.warm{border-color:transparent;background:var(--warm);color:#2b1a05}
+.btn.sm{padding:5px 12px;font-size:12px}
+
+.typing{display:flex;gap:5px;padding:6px 2px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:hop 1s var(--spring) infinite}
+.typing i:nth-child(2){animation-delay:.14s}.typing i:nth-child(3){animation-delay:.28s}
+@keyframes hop{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-6px);opacity:1}}
+
+/* welcome chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line-2);background:var(--panel-2);border-radius:99px;padding:6px 12px;font-size:13px;color:var(--dim)}
+.chip:hover{color:var(--ink);border-color:var(--accent);transform:translateY(-2px)}
+
+/* composer */
+.composer{padding:10px 12px 12px}
+.box{border:1px solid var(--line);background:var(--bg);border-radius:14px;display:flex;flex-direction:column;transition:border-color .2s,box-shadow .3s}
+.box:focus-within{border-color:var(--line-2);box-shadow:0 0 0 4px rgba(140,200,242,.08)}
+.box.bump{animation:bump .35s var(--spring)}
+@keyframes bump{40%{transform:scale(.985)}}
+textarea{resize:none;min-height:44px;max-height:180px;background:transparent;color:var(--ink);border:0;padding:12px 14px 4px;font:inherit;line-height:1.45;outline:none}
+textarea::placeholder{color:var(--faint)}
+textarea:focus-visible{outline:none}
+.bar{display:flex;align-items:center;gap:4px;padding:4px 6px 6px 8px}
+.model{border:0;background:transparent;font-size:12px;font-weight:700;color:var(--dim);padding:5px 8px;border-radius:8px;display:flex;align-items:center;gap:7px}
+.model:hover{color:var(--ink);background:var(--panel-2)}
+.bat{width:18px;height:10px;border:1.5px solid currentColor;border-radius:3px;padding:1px;position:relative;flex:none}
+.bat::after{content:"";position:absolute;right:-4px;top:2px;width:2px;height:4px;background:currentColor;border-radius:0 1px 1px 0}
+.bat i{display:block;height:100%;width:var(--lvl,80%);background:currentColor;border-radius:1px}
+.bar .sp{flex:1}
+.ibtn{width:34px;height:34px;border:0;background:transparent;border-radius:10px;display:grid;place-items:center;color:var(--dim)}
+.ibtn:hover{color:var(--ink);background:var(--panel-2)}
+.ibtn.on{color:var(--accent)}
+.ibtn.rec{color:var(--bad);animation:ping 1.2s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(240,138,138,.4)}100%{box-shadow:0 0 0 10px rgba(240,138,138,0)}}
+.ibtn.send{background:var(--accent);color:var(--accent-ink)}
+.ibtn.send:hover{box-shadow:0 0 0 4px rgba(140,200,242,.18);background:var(--accent)}
+.ibtn.send.stop{background:var(--panel-3);color:var(--ink)}
+.ibtn.send.fly svg{animation:launch .45s var(--spring)}
+@keyframes launch{40%{transform:translate(6px,-6px) scale(.8);opacity:.3}41%{transform:translate(-6px,6px)}}
+.hint{font-size:11px;color:var(--faint);padding:6px 4px 0;display:flex;gap:10px;flex-wrap:wrap}
+.hint b{color:var(--dim);font-weight:700}
+
+/* settings box */
+.scrim{position:fixed;inset:0;background:rgba(10,10,12,.6);backdrop-filter:blur(3px);z-index:20;display:grid;place-items:center;animation:fade .2s both;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+@keyframes fade{from{opacity:0}}
+.settings{width:min(600px,100%);max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line-2);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);
+  animation:rise .4s var(--spring) both;overflow:hidden}
+@keyframes rise{from{opacity:0;transform:translateY(20px) scale(.96)}}
+.shead{display:flex;align-items:center;gap:10px;padding:12px 12px 10px 18px}
+.shead h2{margin:0;font-family:var(--f-brand);font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+.hatch{width:48px;height:6px;border-radius:3px;background:repeating-linear-gradient(-55deg,var(--line-2) 0 3px,transparent 3px 7px)}
+.shead .sp{flex:1}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;flex:none}
+.tab{border:0;background:transparent;padding:9px 11px 10px;font-weight:700;font-size:13px;color:var(--dim);position:relative;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--accent);animation:grow .35s var(--spring)}
+@keyframes grow{from{transform:scaleX(0)}}
+.tab:active{transform:scale(.94)}
+.body{overflow-y:auto;min-height:0}
+.sec{padding:16px 18px 20px;display:flex;flex-direction:column;gap:10px;animation:pop .3s var(--spring)}
+.sec h3{margin:6px 0 0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.note{font-size:13px;color:var(--dim);margin:0;line-height:1.55}
+.note code{font-family:var(--f-mono);font-size:12px;background:var(--panel-3);padding:1px 5px;border-radius:5px}
+.card{border:1px solid var(--line);background:var(--panel-2);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:12px;text-align:left;width:100%;transition:transform .25s var(--spring),border-color .15s,background-color .15s}
+button.card:hover{transform:translateY(-2px);border-color:var(--line-2)}
+.card b{display:block;font-size:14px}
+.card small{display:block;font-size:12px;color:var(--dim)}
+.card .grow{flex:1;min-width:0}
+.card .grow b,.card .grow small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.08em;padding:3px 8px;border-radius:99px;background:var(--panel-3);color:var(--dim);flex:none}
+.card.on{border-color:var(--accent);background:rgba(140,200,242,.06)}
+.card.on .bat{color:var(--accent)}
+.card.on .tag{background:var(--accent);color:var(--accent-ink)}
+.card.off{opacity:.6}
+.card .bat{width:26px;height:13px;color:var(--dim)}
+.card.on .bat i{animation:charge 2.4s ease-in-out infinite}
+@keyframes charge{0%{width:30%}60%,100%{width:var(--lvl,85%)}}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:700;color:var(--dim)}
+select,input[type=text],input[type=url]{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;width:100%}
+select:focus,input:focus{border-color:var(--line-2);outline:none}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:6px;font-weight:700;font-size:13px;color:var(--dim)}
+.seg button[aria-pressed="true"]{background:var(--panel-3);color:var(--ink)}
+.toggle{display:flex;justify-content:space-between;align-items:center;font-size:14.5px;padding:6px 0;gap:12px}
+.toggle small{display:block;font-size:12px;color:var(--dim)}
+.sw{width:42px;height:24px;border:0;border-radius:99px;background:var(--panel-3);position:relative;padding:0;flex:none}
+.sw i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--dim);transition:left .35s var(--spring),background-color .2s}
+.sw[aria-checked="true"]{background:rgba(140,200,242,.35)}
+.sw[aria-checked="true"] i{left:21px;background:var(--accent)}
+.orb{display:block;margin:2px auto 4px;width:116px;height:116px;border:0;background:none;padding:0;color:var(--accent);position:relative;border-radius:50%}
+.orb svg{width:100%;height:100%}
+.orb .r1{transform-origin:60px 60px;animation:rot 18s linear infinite}
+.orb .r2{transform-origin:60px 60px;animation:rot 9s linear infinite reverse}
+.orb.live .r1{animation-duration:3s}.orb.live .r2{animation-duration:1.6s}
+.orb.live .core{animation:throb .8s ease-in-out infinite}
+@keyframes throb{50%{transform:scale(1.06)}}
+.orb .core{transform-origin:60px 60px}
+.orb span{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.stat{border:1px solid var(--line);background:var(--panel-2);border-radius:var(--r);padding:9px 12px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+.stat b{display:block;color:var(--ink);font-size:16px;margin-top:2px;font-weight:800}
+.rowbtns{display:flex;gap:8px;flex-wrap:wrap}
+.params{display:flex;flex-direction:column;gap:6px;padding:4px 2px 2px}
+.param{display:grid;grid-template-columns:minmax(90px,1fr) 2fr 40px;gap:10px;align-items:center;font-size:12.5px;color:var(--dim)}
+.param span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.param output{font-family:var(--f-mono);font-size:11px;text-align:right}
+.audio{width:100%;height:32px;margin-top:6px}
+.empty{border:1px dashed var(--line-2);border-radius:var(--r);padding:16px;text-align:center;color:var(--dim);font-size:13px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel-3);border:1px solid var(--line-2);border-radius:99px;padding:8px 16px;font-size:13px;z-index:40;
+  animation:toast 2.4s var(--spring) forwards;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,16px) scale(.9)}12%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,8px)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:420px){.linktxt{display:none}.hint{display:none}}
+</style>
+</head>
+<body>
+<div class="pane">
+  <header class="head">
+    <div class="brand"><svg class="logo" width="20" height="20" viewBox="0 0 26 26" fill="none" aria-hidden="true"><path d="M13 1 25 8v10l-12 7L1 18V8z" stroke="#8cc8f2" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 16V10m3.3 8V8m3.4 10V8M18 16v-6" stroke="#8cc8f2" stroke-width="1.8" stroke-linecap="round"/></svg>Agent Composer</div>
+    <span class="dot" id="dot"></span><span class="linktxt" id="linkTxt">connecting…</span>
+    <span class="sp"></span>
+    <button class="hbtn" id="histBtn" title="Past chats" aria-label="Past chats"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3.5 10a6.5 6.5 0 1 0 2-4.7M3.5 3v3h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 6.5V10l2.5 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <button class="hbtn" id="newChat" title="New chat" aria-label="New chat"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="hbtn" id="openSet" title="Settings" aria-label="Settings"><svg width="19" height="19" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.6"/><path d="M10 1.8v2.4M10 15.8v2.4M1.8 10h2.4M15.8 10h2.4M4.2 4.2l1.7 1.7M14.1 14.1l1.7 1.7M4.2 15.8l1.7-1.7M14.1 5.9l1.7-1.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  </header>
+  <div class="hist" id="hist" hidden></div>
+
+  <div class="log" id="log" aria-live="polite"></div>
+
+  <div class="composer">
+    <div class="box" id="box">
+      <textarea id="inp" rows="1" placeholder="Ask for a beat, a tempo change, a melody…" aria-label="Message"></textarea>
+      <div class="bar">
+        <button class="model" id="modelBtn" title="Choose the brain"><span class="bat"><i></i></span><span id="cellName">Claude Code · Opus</span></button>
+        <span class="sp"></span>
+        <button class="ibtn" id="spk" title="Read replies aloud" aria-label="Read replies aloud" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 8h3l4-4v12l-4-4H3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 7a4 4 0 0 1 0 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+        <button class="ibtn" id="mic" title="Talk instead of typing" aria-label="Microphone"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="7" y="2" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M4 9a6 6 0 0 0 12 0M10 15v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+        <button class="ibtn send" id="send" aria-label="Send"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 16V4m-5 5 5-5 5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </div>
+    <div class="hint"><span><b>Enter</b> send</span><span><b>Shift+Enter</b> new line</span><span><b>/</b> quick commands</span></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="settings" role="dialog" aria-modal="true" aria-label="Settings">
+    <div class="shead"><h2>Settings</h2><span class="hatch" aria-hidden="true"></span><span class="sp"></span>
+      <button class="hbtn" id="closeSet" aria-label="Close settings"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 4l12 12M16 4 4 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-t="brain" aria-selected="true">Brain</button>
+      <button class="tab" role="tab" data-t="dock" aria-selected="false">VST Dock</button>
+      <button class="tab" role="tab" data-t="notes" aria-selected="false">Notes</button>
+      <button class="tab" role="tab" data-t="takes" aria-selected="false">Takes</button>
+      <button class="tab" role="tab" data-t="voice" aria-selected="false">Voice</button>
+      <button class="tab" role="tab" data-t="project" aria-selected="false">Project</button>
+      <button class="tab" role="tab" data-t="safety" aria-selected="false">Safety &amp; feel</button>
+    </div>
+    <div class="body">
+    <section class="sec" data-p="brain">
+      <div id="cells" style="display:flex;flex-direction:column;gap:8px"></div>
+      <h3>Model</h3>
+      <div class="seg" id="modelSeg"><button data-m="opus">Opus</button><button data-m="sonnet">Sonnet</button><button data-m="haiku">Haiku</button></div>
+      <p class="note">Every brain gets the same project tools and nothing else: it can touch FL, not your files. Opus thinks deepest, Haiku answers fastest.</p>
+    </section>
+
+    <section class="sec" data-p="dock" hidden>
+      <p class="note">The plugins in your project, one tap away. Park your go-to ones so they stay at the top. The agent can read and turn their knobs too.</p>
+      <h3>Parked</h3><div id="parked" style="display:flex;flex-direction:column;gap:6px"></div>
+      <h3>In this project</h3><div id="chans" style="display:flex;flex-direction:column;gap:6px"></div>
+    </section>
+
+    <section class="sec" data-p="notes" hidden>
+      <p class="note">Ask for a melody, chords or a bassline. The agent writes the notes two ways: a <code>.mid</code> file you can drag into FL, and a queue for the piano roll.</p>
+      <div class="card"><span style="font-size:20px">🎹</span><span class="grow"><b>Paste into the piano roll</b><small>Open a channel's piano roll → Tools → Scripting → Agent Composer</small></span></div>
+      <h3>MIDI files</h3><div id="midis" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div class="rowbtns"><button class="btn sm" data-open="midi">Open MIDI folder</button></div>
+    </section>
+
+    <section class="sec" data-p="takes" hidden>
+      <p class="note">Drop vocal takes into your Takes folder. Play them here, name them, and ask the agent which one to use.</p>
+      <div id="takes" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div class="rowbtns"><button class="btn sm" data-open="takes">Open Takes folder</button><button class="btn sm" id="reTakes">Refresh</button></div>
+    </section>
+
+    <section class="sec" data-p="voice" hidden>
+      <button class="orb" id="orb" aria-label="Tap to talk"><svg viewBox="0 0 120 120" fill="none" aria-hidden="true">
+        <g class="r1"><circle cx="60" cy="60" r="55" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="48 11 16 11 72 18"/></g>
+        <g class="r2"><circle cx="60" cy="60" r="46" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 6" opacity=".5"/></g>
+        <circle class="core" cx="60" cy="60" r="35" stroke="currentColor" stroke-width="2" fill="rgba(140,200,242,.08)"/></svg><span id="orbTxt">tap to talk</span></button>
+      <div class="toggle"><span>Read replies aloud<small>Uses your computer's voice</small></span><button class="sw" role="switch" aria-checked="false" id="ra"><i></i></button></div>
+      <div class="field"><label for="voiceUrl">Custom voice server (optional)</label><input type="url" id="voiceUrl" placeholder="http://127.0.0.1:8765  (e.g. JellyVoice)"></div>
+      <p class="note">Talking uses your browser's speech-to-text, no install. A custom voice server answers <code>POST /tts {"text"}</code> with audio; leave it empty to use the system voice.</p>
+    </section>
+
+    <section class="sec" data-p="project" hidden>
+      <div class="grid2">
+        <div class="stat">Link<b id="sLink">—</b></div>
+        <div class="stat">Tempo<b id="sTempo">—</b></div>
+        <div class="stat">Pattern<b id="sPat">—</b></div>
+        <div class="stat">Transport<b id="sPlay">—</b></div>
+      </div>
+      <div class="rowbtns"><button class="btn sm" id="pPlay">▶ Play</button><button class="btn sm" id="pStop">■ Stop</button><button class="btn sm" id="pUndo">↶ Undo</button><button class="btn sm" id="pRe">Refresh</button></div>
+      <p class="note" id="projNote"></p>
+    </section>
+
+    <section class="sec" data-p="safety" hidden>
+      <div class="toggle"><span>Ask before every change<small>An Approve card shows up before anything in FL moves</small></span><button class="sw" role="switch" aria-checked="true" data-k="ask_before_changes"><i></i></button></div>
+      <div class="toggle"><span>Allow saving the project<small>Off means only you save</small></span><button class="sw" role="switch" aria-checked="false" data-k="allow_save"><i></i></button></div>
+      <div class="toggle"><span>Sounds<small>Soft clicks and chimes</small></span><button class="sw" role="switch" aria-checked="true" data-k="sounds"><i></i></button></div>
+      <p class="note">Every change the agent makes is one undo step in FL. <span id="ver"></span></p>
+    </section>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const log=$("#log"),inp=$("#inp");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const H={"Content-Type":"application/json","X-Agent-Composer":"1"};
+let LIVE=false, busy=false, sessionId=null, pollT=null;
+let S={ask_before_changes:true,allow_save:false,model:"opus",brain:"claude-code",read_aloud:false,sounds:true,voice_server:""};
+const store={get(k,d){try{const v=localStorage.getItem("ac."+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("ac."+k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- sound: tiny WebAudio blips, quiet on purpose ---------- */
+let AC=null;
+function blip(f=660,d=.07,type="sine",vol=.05,slide=0,when=0){
+  if(!S.sounds)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime+when,o=AC.createOscillator(),g=AC.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(f*slide,t+d);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+const sfx={send:()=>blip(520,.12,"sine",.05,1.8),tick:()=>blip(1200,.03,"triangle",.025),ok:()=>{blip(660,.09,"sine",.045);blip(990,.14,"sine",.04,1,.07)},
+  no:()=>blip(240,.16,"triangle",.05,.7),ask:()=>{blip(784,.08,"sine",.04);blip(784,.08,"sine",.04,1,.12)},open:()=>blip(440,.08,"sine",.03,1.5),close:()=>blip(660,.08,"sine",.03,.66)};
+function sparks(node,color="var(--ok)"){const r=node.getBoundingClientRect();for(let i=0;i<8;i++){const s=document.createElement("i");s.className="spark";const a=Math.PI*2*i/8+Math.random()*.4,d=14+Math.random()*12;
+  s.style.cssText=`left:${r.width-18}px;top:${r.height/2-2}px;background:${color};--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px`;node.appendChild(s);setTimeout(()=>s.remove(),650)}}
+function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2500)}
+
+/* ---------- tiny markdown ---------- */
+function md(src){
+  const blocks=String(src).split(/```/);let out="";
+  blocks.forEach((b,i)=>{if(i%2){out+=`<pre><code>${esc(b.replace(/^\w*\n/,""))}</code></pre>`;return}
+    const lines=esc(b).split("\n");let list=null,para=[];
+    const inline=s=>s.replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*/g,"$1<i>$2</i>");
+    const flush=()=>{if(para.length){out+=`<p>${inline(para.join("<br>"))}</p>`;para=[]}};
+    const endList=()=>{if(list){out+=`</${list}>`;list=null}};
+    for(const l of lines){const ul=l.match(/^\s*[-*•]\s+(.*)/),ol=l.match(/^\s*\d+[.)]\s+(.*)/);
+      if(ul||ol){flush();const t=ul?"ul":"ol";if(list!==t){endList();out+=`<${t}>`;list=t}out+=`<li>${inline((ul||ol)[1])}</li>`}
+      else if(!l.trim()){flush();endList()}else{endList();para.push(l.replace(/^#+\s*/,""))}}
+    flush();endList()});
+  return out}
+
+/* ---------- chat rendering ---------- */
+function el(h){const d=document.createElement("div");d.innerHTML=h.trim();return d.firstElementChild}
+function scroll(){requestAnimationFrame(()=>log.scrollTop=log.scrollHeight)}
+function sys(t){const m=el(`<div class="msg sys">${esc(t)}</div>`);log.appendChild(m);scroll();return m}
+function userMsg(t){const m=el(`<div class="msg user">${esc(t).replace(/\n/g,"<br>")}</div>`);log.appendChild(m);scroll();return m}
+function agentMsg(){const m=el(`<div class="msg agent"><div class="who">Agent</div><div class="md"></div><div class="acts"><button data-a="copy">Copy</button><button data-a="say">Read aloud</button></div></div>`);
+  m._raw="";log.appendChild(m);scroll();return m}
+function setText(m,raw,streaming){m._raw=raw;m.querySelector(".md").innerHTML=md(raw)+(streaming?'<span class="caret"></span>':"");scroll()}
+log.addEventListener("click",e=>{const b=e.target.closest(".acts button");if(!b)return;const m=b.closest(".msg");
+  if(b.dataset.a==="copy"){navigator.clipboard?.writeText(m._raw||"").then(()=>toast("Copied"),()=>{});sfx.tick()}else speak(m._raw||"",true)});
+function typing(m){const t=el(`<div class="typing"><i></i><i></i><i></i></div>`);m.insertBefore(t,m.querySelector(".acts"));scroll();return t}
+const PRETTY={get_project_snapshot:"Reading your project",bridge_status:"Checking the link",set_tempo:"Tempo",create_pattern:"New pattern",rename_pattern:"Rename pattern",add_marker:"Marker",
+  set_mixer_volume:"Mixer volume",mute_mixer_track:"Mute",set_step_sequence:"Steps",play:"Play",stop:"Stop",undo:"Undo",save_project:"Save",list_plugins:"Looking at your plugins",
+  get_plugin_params:"Reading knobs",set_plugin_param:"Turn a knob",change_preset:"Preset",park_plugin:"Park in dock",write_notes:"Writing notes",list_takes:"Checking takes",rename_take:"Rename take",run_action:"Action"};
+function argText(name,input){if(!input)return"";if(name==="set_step_sequence"&&input.pattern)return`ch ${input.channel} · `+input.pattern.map(b=>b?"x":".").join("");
+  if(name==="write_notes")return`${input.name||""} · ${(input.notes||[]).length} notes`;
+  return Object.entries(input).map(([k,v])=>`${k}=${typeof v==="object"?JSON.stringify(v):v}`).join(" ").slice(0,90)}
+function toolRow(m,id,name,input){const r=el(`<div class="tool"><span class="st"><span class="spin"></span></span><span>${esc(PRETTY[name]||name)}</span><span class="args">${esc(argText(name,input))}</span></div>`);
+  r.dataset.id=id;m.insertBefore(r,m.querySelector(".typing")||m.querySelector(".acts"));scroll();return r}
+function toolDone(r,ok){if(!r)return;r.classList.add(ok?"ok":"no");r.querySelector(".st").innerHTML=ok?'<svg width="14" height="14" viewBox="0 0 16 16"><path d="M3 8.5 6.5 12 13 4.5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':"✕";
+  if(ok){sparks(r);sfx.tick()}else sfx.no()}
+function approvalCard(m,a,onAnswer){const c=el(`<div class="approve"><div class="q">Okay to do this?</div><div class="what">${esc(a.summary)}</div>${a.detail?`<div class="detail">${esc(a.detail)}</div>`:""}
+  <div class="row"><button class="btn go">Approve</button><button class="btn">Not that</button></div></div>`);
+  m.insertBefore(c,m.querySelector(".typing")||m.querySelector(".acts"));sfx.ask();scroll();
+  const [y,n]=c.querySelectorAll("button");
+  y.onclick=()=>{c.classList.add("done");c.querySelector(".q").textContent="Approved";sfx.ok();onAnswer(true)};
+  n.onclick=()=>{c.classList.add("done");c.querySelector(".q").textContent="Skipped";sfx.no();onAnswer(false)};
+  return c}
+
+/* ---------- send ---------- */
+function setBusy(b){busy=b;const s=$("#send");s.classList.toggle("stop",b);s.setAttribute("aria-label",b?"Stop":"Send");
+  s.innerHTML=b?'<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" rx="2" fill="currentColor"/></svg>':'<svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 16V4m-5 5 5-5 5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
+function grow(){inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,180)+"px"}
+inp.addEventListener("input",grow);
+
+async function submit(){
+  if(busy){stopRun();return}
+  const text=inp.value.trim();if(!text)return;
+  inp.value="";grow();$("#box").classList.remove("bump");void $("#box").offsetWidth;$("#box").classList.add("bump");
+  $("#send").classList.remove("fly");void $("#send").offsetWidth;$("#send").classList.add("fly");sfx.send();
+  $(".welcome")?.remove();
+  if(text.startsWith("/"))return slash(text);
+  userMsg(text);remember("user",text);
+  LIVE?await runLive(text):runDemo(text);
+}
+$("#send").onclick=submit;
+inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();submit()}});
+
+async function runLive(text){
+  setBusy(true);const m=agentMsg();const dots=typing(m);let raw="",rows={};
+  const seen=new Set();
+  pollT=setInterval(async()=>{try{const list=await (await fetch("/api/approvals")).json();
+    for(const a of list){if(seen.has(a.id))continue;seen.add(a.id);
+      approvalCard(m,a,ok=>fetch("/api/approvals/"+a.id,{method:"POST",headers:H,body:JSON.stringify({approved:ok})}))}}catch(e){}},400);
+  try{
+    const res=await fetch("/api/chat",{method:"POST",headers:H,body:JSON.stringify({text,session_id:sessionId})});
+    const rd=res.body.getReader(),dec=new TextDecoder();let buf="";
+    for(;;){const {value,done}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+      while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i);buf=buf.slice(i+1);if(!line.trim())continue;let ev;try{ev=JSON.parse(line)}catch(e){continue}
+        if(ev.type==="session"){sessionId=ev.id}
+        else if(ev.type==="text"){raw+=ev.delta;setText(m,raw,true)}
+        else if(ev.type==="tool"){if(raw&&!raw.endsWith("\n"))raw+="\n\n";rows[ev.id]=toolRow(m,ev.id,ev.name,ev.input)}
+        else if(ev.type==="tool_done"){toolDone(rows[ev.id],ev.ok)}
+        else if(ev.type==="error"){raw+=(raw?"\n\n":"")+"⚠️ "+ev.text;setText(m,raw,false)}
+        else if(ev.type==="done"){sessionId=ev.session_id||sessionId}}}
+  }catch(e){raw+=(raw?"\n\n":"")+"⚠️ Lost the connection to the Agent Composer app.";}
+  clearInterval(pollT);dots.remove();setText(m,raw||"(no reply)",false);setBusy(false);
+  remember("agent",raw);speak(raw);refreshLink();
+}
+async function stopRun(){if(LIVE){await fetch("/api/stop",{method:"POST",headers:H,body:"{}"});toast("Stopped")}}
+
+/* ---------- slash commands: instant, no tokens ---------- */
+const SLASH={"/new":"start a fresh chat","/undo":"undo the last change in FL","/play":"start playback","/stop":"stop playback","/snapshot":"show the project at a glance","/dock":"open the VST dock","/help":"list these"};
+async function slash(t){const c=t.split(/\s+/)[0].toLowerCase();
+  if(c==="/new")return newChat();
+  if(c==="/dock")return openSet("dock");
+  if(c==="/help"||!SLASH[c]){const m=agentMsg();setText(m,Object.entries(SLASH).map(([k,v])=>`- \`${k}\` ${v}`).join("\n"));return}
+  const m=agentMsg();
+  if(!LIVE){setText(m,demoSnap(c));return}
+  if(c==="/snapshot"){const s=await api("/api/snapshot");setText(m,s.error?"⚠️ "+s.error:`**${esc(s.project||"Project")}** · ${s.tempo_bpm} BPM · pattern ${s.current_pattern} · ${s.playing?"playing":"stopped"}\n\n${(s.channels||[]).length} channels, ${(s.patterns||[]).length} patterns`);return}
+  const map={"/undo":["/api/undo",{}],"/play":["/api/transport",{play:true}],"/stop":["/api/transport",{play:false}]};
+  const r=await post(...map[c]);setText(m,r.success===false||r.error?"⚠️ "+(r.error||"FL didn't take that."):"Done.");if(r.success!==false)sfx.ok()}
+
+/* ---------- history ---------- */
+function remember(role,text){if(!sessionId&&LIVE)return;const k="chat."+(sessionId||"demo");const a=store.get(k,[]);a.push([role,text]);store.set(k,a.slice(-200))}
+function newChat(){sessionId=null;log.innerHTML="";welcome();sfx.open()}
+$("#newChat").onclick=newChat;
+$("#histBtn").onclick=async e=>{e.stopPropagation();const h=$("#hist");if(!h.hidden){h.hidden=true;return}
+  const list=LIVE?await api("/api/sessions"):[];h.innerHTML=Array.isArray(list)&&list.length?list.map(s=>`<button data-id="${esc(s.id)}">${esc(s.title)}<small>${new Date(s.at*1000).toLocaleString()}</small></button>`).join(""):`<div class="empty">No past chats yet.</div>`;
+  h.hidden=false;sfx.open()};
+$("#hist").addEventListener("click",e=>{const b=e.target.closest("button[data-id]");if(!b)return;sessionId=b.dataset.id;$("#hist").hidden=true;log.innerHTML="";
+  const past=store.get("chat."+sessionId,[]);for(const [r,t] of past){if(r==="user")userMsg(t);else setText(agentMsg(),t,false)}
+  sys("Picked up where you left off");});
+document.addEventListener("click",e=>{if(!e.target.closest("#hist,#histBtn"))$("#hist").hidden=true});
+
+function welcome(){const w=el(`<div class="msg agent welcome"><div class="who">Agent</div><div class="md"><p>Hey! I'm in your project. I read it before every reply and ask before I change anything. What are we making?</p></div>
+  <div class="chips"><button class="chip">Make a 4-on-the-floor kick</button><button class="chip">Set the tempo to 140</button><button class="chip">Write a sad piano melody in A minor</button><button class="chip">What plugins am I using?</button></div></div>`);
+  log.appendChild(w);w.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{inp.value=c.textContent;submit()})}
+
+/* ---------- voice ---------- */
+function speak(t,force){if(!(S.read_aloud||force)||!t)return;const plain=t.replace(/```[\s\S]*?```/g,"").replace(/[*`#>_-]/g,"");
+  if(S.voice_server){fetch(S.voice_server.replace(/\/$/,"")+"/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:plain})})
+    .then(r=>r.ok?r.blob():Promise.reject()).then(b=>{const a=new Audio(URL.createObjectURL(b));live(true,"speaking");a.onended=()=>live(false);a.play()}).catch(()=>sysSpeak(plain));return}
+  sysSpeak(plain)}
+function sysSpeak(t){if(!("speechSynthesis" in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.onstart=()=>live(true,"speaking");u.onend=()=>live(false);speechSynthesis.speak(u)}catch(e){}}
+function live(on,txt){$("#orb").classList.toggle("live",on);$("#orbTxt").textContent=on?txt:"tap to talk"}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null;
+function listen(){if(rec){rec.stop();return}
+  const fail=()=>{rec=null;$("#mic").classList.remove("rec");live(false);toast("The mic isn't available here")};
+  if(!SR)return fail();
+  try{rec=new SR();rec.lang=navigator.language||"en-US";rec.interimResults=true;
+    rec.onresult=e=>{inp.value=[...e.results].map(r=>r[0].transcript).join("");grow()};
+    rec.onend=()=>{$("#mic").classList.remove("rec");live(false);rec=null;if(inp.value.trim())submit()};
+    rec.onerror=fail;rec.start();$("#mic").classList.add("rec");live(true,"listening");sfx.open()}catch(e){fail()}}
+$("#mic").onclick=listen;$("#orb").onclick=listen;
+function setRead(v){S.read_aloud=v;$("#spk").classList.toggle("on",v);$("#spk").setAttribute("aria-pressed",v);$("#ra").setAttribute("aria-checked",v);if(!v&&"speechSynthesis" in window)speechSynthesis.cancel();save({read_aloud:v})}
+$("#spk").onclick=()=>{setRead(!S.read_aloud);sfx.tick();toast(S.read_aloud?"Reading replies aloud":"Quiet mode")};
+$("#ra").onclick=()=>setRead(!S.read_aloud);
+$("#voiceUrl").addEventListener("change",e=>save({voice_server:e.target.value.trim()}));
+
+/* ---------- settings box ---------- */
+const CELLS=[
+  {id:"claude-code",name:"Claude Code",sub:"Your Claude plan. No key needed.",lvl:"88%"},
+  {id:"claude-api",name:"Claude API",sub:"Pay per use. Reads ANTHROPIC_API_KEY from your system.",lvl:"60%"},
+  {id:"codex",name:"Codex",sub:"Socket ready. Adapter coming.",lvl:"35%",soon:true},
+  {id:"local",name:"Local model (Ollama)",sub:"Free and offline. Adapter coming.",lvl:"100%",soon:true}];
+const MODELS={opus:"Opus",sonnet:"Sonnet",haiku:"Haiku"};
+function drawCells(){$("#cells").innerHTML=CELLS.map(c=>`<button class="card ${c.id===S.brain?"on":""} ${c.soon?"off":""}" data-id="${c.id}" ${c.soon?'aria-disabled="true"':""}>
+  <span class="bat" style="--lvl:${c.lvl}"><i></i></span><span class="grow"><b>${c.name}</b><small>${c.sub}</small></span><span class="tag">${c.id===S.brain?"PLUGGED IN":c.soon?"SOON":"PLUG IN"}</span></button>`).join("");
+  $("#cellName").textContent=`${CELLS.find(c=>c.id===S.brain).name} · ${MODELS[S.model]||S.model}`;
+  $$("#modelSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===S.model))}
+$("#cells").addEventListener("click",e=>{const b=e.target.closest(".card");if(!b)return;const c=CELLS.find(x=>x.id===b.dataset.id);
+  if(c.soon){b.animate([{transform:"translateX(-4px)"},{transform:"translateX(4px)"},{transform:"none"}],{duration:250});sfx.no();toast(c.name+" is coming in a later update");return}
+  S.brain=c.id;save({brain:c.id});drawCells();sfx.ok()});
+$("#modelSeg").addEventListener("click",e=>{const m=e.target.dataset.m;if(!m)return;S.model=m;save({model:m});drawCells();sfx.tick()});
+function openSet(tab){$("#scrim").hidden=false;pick(tab||store.get("tab","brain"));sfx.open()}
+function closeSet(){if($("#scrim").hidden)return;$("#scrim").hidden=true;sfx.close()}
+function pick(t){$$(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));$$(".sec").forEach(s=>s.hidden=s.dataset.p!==t);store.set("tab",t);
+  ({dock:loadDock,notes:loadMidi,takes:loadTakes,project:loadProject})[t]?.()}
+$("#openSet").onclick=()=>openSet();$("#modelBtn").onclick=()=>openSet("brain");$("#closeSet").onclick=closeSet;
+$("#scrim").addEventListener("click",e=>{if(e.target.id==="scrim")closeSet()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSet()});
+$(".tabs").addEventListener("click",e=>{if(e.target.dataset.t){pick(e.target.dataset.t);sfx.tick()}});
+$$(".sw[data-k]").forEach(s=>s.addEventListener("click",()=>{const v=s.getAttribute("aria-checked")!=="true";s.setAttribute("aria-checked",v);S[s.dataset.k]=v;save({[s.dataset.k]:v});sfx.tick()}));
+$$("[data-open]").forEach(b=>b.onclick=()=>LIVE?post("/api/open-folder",{which:b.dataset.open}):toast("Opens the folder in the desktop app"));
+
+async function api(u){try{return await (await fetch(u)).json()}catch(e){return{error:"offline"}}}
+async function post(u,b){try{return await (await fetch(u,{method:"POST",headers:H,body:JSON.stringify(b)})).json()}catch(e){return{error:"offline"}}}
+function save(ch){Object.assign(S,ch);LIVE?post("/api/settings",ch):store.set("settings",S)}
+function applySettings(){drawCells();$$(".sw[data-k]").forEach(s=>s.setAttribute("aria-checked",!!S[s.dataset.k]));
+  $("#spk").classList.toggle("on",S.read_aloud);$("#ra").setAttribute("aria-checked",S.read_aloud);$("#voiceUrl").value=S.voice_server||""}
+
+/* VST dock */
+async function loadDock(){const d=LIVE?await api("/api/dock"):DEMO.dock;
+  if(d.error){$("#chans").innerHTML=`<div class="empty">FL isn't answering. Open FL with Agent Composer picked in MIDI settings.</div>`;$("#parked").innerHTML="";return}
+  $("#parked").innerHTML=d.parked.length?d.parked.map(p=>`<div class="card"><span style="font-size:18px">📌</span><span class="grow"><b>${esc(p.name)}</b><small>${esc(p.note||"parked")}</small></span><button class="btn sm" data-unpark="${esc(p.name)}">Unpark</button></div>`).join(""):`<div class="empty">Nothing parked yet. Tap 📌 on a plugin below.</div>`;
+  $("#chans").innerHTML=d.channels.map(c=>`<div class="card" style="flex-wrap:wrap"><span class="tag">${c.channel}</span><span class="grow"><b>${esc(c.plugin||"(no plugin)")}</b><small>${esc(c.channel_name)}</small></span>
+    <button class="btn sm" data-pre="prev" data-ch="${c.channel}" title="Previous preset">‹</button><button class="btn sm" data-pre="next" data-ch="${c.channel}" title="Next preset">›</button>
+    <button class="btn sm" data-knobs="${c.channel}">Knobs</button>${c.plugin?`<button class="btn sm" data-park="${esc(c.plugin)}" title="Park">📌</button>`:""}<div class="params" style="flex-basis:100%" hidden></div></div>`).join("")||`<div class="empty">No channels yet.</div>`}
+$("#parked").addEventListener("click",async e=>{const n=e.target.dataset.unpark;if(!n)return;if(LIVE)await post("/api/unpark",{name:n});else DEMO.dock.parked=DEMO.dock.parked.filter(p=>p.name!==n);sfx.close();loadDock()});
+$("#chans").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.park){if(LIVE)await post("/api/park",{name:b.dataset.park});else DEMO.dock.parked.unshift({name:b.dataset.park,note:"parked just now"});sfx.ok();toast("Parked "+b.dataset.park);loadDock()}
+  else if(b.dataset.pre){const r=LIVE?await post("/api/preset",{channel:+b.dataset.ch,direction:b.dataset.pre}):{};r.success===false||r.error?(sfx.no(),toast(r.error||"No presets")):(sfx.tick(),toast((b.dataset.pre==="next"?"Next":"Previous")+" preset"))}
+  else if(b.dataset.knobs){const box=b.parentElement.querySelector(".params");if(!box.hidden){box.hidden=true;return}
+    const r=LIVE?await api("/api/params?channel="+b.dataset.knobs):DEMO.params;const ps=(r.params||[]).filter(p=>p.name);
+    box.innerHTML=ps.length?ps.map(p=>`<label class="param"><span title="${esc(p.name)}">${esc(p.name)}</span><input type="range" min="0" max="1" step="0.01" value="${+p.value||0}" data-ch="${b.dataset.knobs}" data-p="${p.index}"><output>${Math.round((+p.value||0)*100)}</output></label>`).join(""):`<div class="note">This plugin doesn't share its knobs.</div>`;box.hidden=false;sfx.open()}});
+$("#chans").addEventListener("input",e=>{if(e.target.type!=="range")return;e.target.nextElementSibling.textContent=Math.round(e.target.value*100)});
+$("#chans").addEventListener("change",e=>{if(e.target.type!=="range")return;LIVE&&post("/api/param",{channel:+e.target.dataset.ch,param:+e.target.dataset.p,value:+e.target.value});sfx.tick()});
+
+/* notes + takes */
+async function loadMidi(){const d=LIVE?await api("/api/midi"):DEMO.midi;
+  $("#midis").innerHTML=(d.files||[]).length?d.files.map(f=>`<div class="card"><span style="font-size:18px">🎼</span><span class="grow"><b>${esc(f.name)}</b><small>${new Date(f.modified*1000).toLocaleString()}</small></span></div>`).join(""):`<div class="empty">No notes yet. Try “write a bassline in E minor”.</div>`}
+async function loadTakes(){const d=LIVE?await api("/api/takes"):DEMO.takes;
+  $("#takes").innerHTML=(d.takes||[]).length?d.takes.map(t=>`<div class="card" style="flex-wrap:wrap"><span style="font-size:18px">🎙️</span><span class="grow"><b>${esc(t.name)}</b><small>${t.kb} KB · ${new Date(t.modified*1000).toLocaleString()}</small></span>
+    <button class="btn sm" data-ren="${esc(t.name)}">Rename</button>${LIVE?`<audio class="audio" controls preload="none" src="/takes/${encodeURIComponent(t.name)}"></audio>`:""}</div>`).join(""):`<div class="empty">No takes yet. Drop .wav or .mp3 files into the Takes folder.</div>`}
+$("#reTakes").onclick=()=>{loadTakes();sfx.tick()};
+$("#takes").addEventListener("click",async e=>{const n=e.target.dataset.ren;if(!n)return;const card=e.target.closest(".card"),g=card.querySelector(".grow");
+  g.innerHTML=`<input type="text" value="${esc(n.replace(/\.[^.]+$/,""))}" aria-label="New name">`;const i=g.querySelector("input");i.focus();i.select();
+  const done=async ok=>{if(ok&&i.value.trim()){const r=LIVE?await post("/api/rename-take",{old:n,new:i.value.trim()}):{success:true};r.success?(sfx.ok(),toast("Renamed")):(sfx.no(),toast(r.error))}loadTakes()};
+  i.onkeydown=k=>{if(k.key==="Enter")done(true);if(k.key==="Escape"){k.stopPropagation();done(false)}};i.onblur=()=>done(true)});
+
+/* project */
+async function loadProject(){
+  if(!LIVE){$("#sLink").textContent="Demo";$("#sTempo").textContent=DEMO.state.tempo+" BPM";$("#sPat").textContent=DEMO.state.pattern;$("#sPlay").textContent=DEMO.state.playing?"Playing":"Stopped";
+    $("#projNote").textContent="Demo mode: sample numbers. In the app this shows your real project.";return}
+  const h=await api("/api/health"),s=await api("/api/snapshot");const alive=h.fl&&h.fl.alive&&h.fl.seconds_since_heartbeat<10;
+  $("#sLink").textContent=alive?"Live":"Not linked";
+  if(s.error||s.success===false){$("#sTempo").textContent=$("#sPat").textContent=$("#sPlay").textContent="—";$("#projNote").textContent=s.error||"";return}
+  roll($("#sTempo"),s.tempo_bpm," BPM");const p=(s.patterns||[]).find(x=>x.index===s.current_pattern);
+  $("#sPat").textContent=`${s.current_pattern}${p?" · "+p.name:""}`;$("#sPlay").textContent=s.playing?"Playing":"Stopped";$("#projNote").textContent=s.project||""}
+function roll(node,to,suffix){const from=parseFloat(node.textContent)||0;const t0=performance.now();
+  const step=t=>{const k=Math.min(1,(t-t0)/500),e=1-Math.pow(1-k,3);node.textContent=Math.round(from+(to-from)*e)+suffix;if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
+$("#pPlay").onclick=async()=>{LIVE?await post("/api/transport",{play:true}):DEMO.state.playing=true;sfx.ok();loadProject()};
+$("#pStop").onclick=async()=>{LIVE?await post("/api/transport",{play:false}):DEMO.state.playing=false;sfx.tick();loadProject()};
+$("#pUndo").onclick=async()=>{LIVE&&await post("/api/undo",{});sfx.tick();toast("Undone");loadProject()};
+$("#pRe").onclick=()=>{loadProject();sfx.tick()};
+
+/* link light */
+async function refreshLink(){if(!LIVE){$("#dot").className="dot warn";$("#linkTxt").textContent="demo";return}
+  const h=await api("/api/health");const ok=h.fl&&h.fl.alive&&h.fl.seconds_since_heartbeat<10;
+  $("#dot").className="dot "+(ok?"live":"warn");$("#linkTxt").textContent=!h.claude?"Claude Code not found":ok?(h.fl.project||"linked to FL"):"FL not linked"}
+
+/* ---------- demo mode: the same window with a scripted agent ---------- */
+const now=Date.now()/1000;
+const DEMO={state:{tempo:140,pattern:"1 · Intro",playing:false},
+  dock:{parked:[{name:"Serum",note:"go-to lead"}],channels:[{channel:0,channel_name:"Kick",plugin:"FPC"},{channel:1,channel_name:"Lead",plugin:"Serum"},{channel:2,channel_name:"Keys",plugin:"FL Keys"},{channel:3,channel_name:"808",plugin:"Transistor Bass"}]},
+  params:{params:[{index:0,name:"Cutoff",value:.62},{index:1,name:"Resonance",value:.2},{index:2,name:"Attack",value:.05},{index:3,name:"Release",value:.4}]},
+  midi:{files:[{name:"Sad piano in A minor.mid",modified:now-3600}]},
+  takes:{takes:[{name:"verse take 3.wav",kb:5120,modified:now-600},{name:"hook double.wav",kb:3900,modified:now-7200}]}};
+function demoSnap(c){return c==="/snapshot"?`**Demo project** · ${DEMO.state.tempo} BPM · pattern ${DEMO.state.pattern} · ${DEMO.state.playing?"playing":"stopped"}`:"Done. (demo)"}
+function plan(t){t=t.toLowerCase();let m;
+  if(m=t.match(/tempo.*?(\d{2,3})|(\d{2,3})\s*bpm/)){const b=+(m[1]||m[2]);return{say:`Tempo goes from \`${DEMO.state.tempo}\` to \`${b}\` BPM.`,steps:[["set_tempo",{bpm:b}]],ask:`Set tempo to ${b} BPM`,apply:()=>DEMO.state.tempo=b}}
+  if(/kick|four|4-on|drum/.test(t))return{say:"Four-on-the-floor on the Kick channel: steps 1, 5, 9 and 13.",steps:[["set_step_sequence",{channel:0,pattern:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]}]],ask:"Write steps on channel 0",detail:"x...x...x...x..."};
+  if(/melod|chord|bass|piano|notes/.test(t))return{say:"Here's an 8-note idea in A minor, written to **Sad piano in A minor.mid** and queued for the piano roll. Open the Keys piano roll → Tools → Scripting → Agent Composer to paste it.",steps:[["write_notes",{name:"Sad piano in A minor",notes:new Array(8)}]],ask:"Write 8 notes as 'Sad piano in A minor'",detail:"A4@0 C5@1 E5@2 D5@3 C5@4 B4@5 A4@6 E4@7"};
+  if(/plugin|vst|dock|synth/.test(t))return{say:"You've got **FPC** on Kick, **Serum** on Lead, **FL Keys** on Keys and **Transistor Bass** on the 808. Serum is parked in your dock. Want me to open its knobs?",steps:[["list_plugins",{}]]};
+  if(m=t.match(/pattern (?:called|named)?\s*([\w ]+)/)){const n=m[1].trim().replace(/\b\w/g,c=>c.toUpperCase());return{say:`New pattern: \`${n}\`.`,steps:[["create_pattern",{name:n}]],ask:`Create pattern '${n}'`,apply:()=>DEMO.state.pattern="2 · "+n}}
+  if(/mute/.test(t))return{say:"Muting mixer track 4, Lead Vox.",steps:[["mute_mixer_track",{track:4,muted:true}]],ask:"Mute mixer 4"};
+  if(/play|start/.test(t))return{say:"Rolling.",steps:[["play",{}]],apply:()=>DEMO.state.playing=true};
+  if(/stop/.test(t))return{say:"Stopped.",steps:[["stop",{}]],apply:()=>DEMO.state.playing=false};
+  return{say:`Your project's at ${DEMO.state.tempo} BPM on pattern ${DEMO.state.pattern}. This is the demo, so I can set the tempo, write a kick, write notes, show your plugins, make a pattern, mute, play and stop. In the app I can do a lot more.`,steps:[["get_project_snapshot",{}]]}}
+function runDemo(text){setBusy(true);const p=plan(text),m=agentMsg(),dots=typing(m);let i=0;
+  const finish=()=>{dots.remove();let raw="";const words=p.say.split(" ");const tick=setInterval(()=>{raw+=(raw?" ":"")+words[i++];setText(m,raw,i<words.length);
+    if(i>=words.length){clearInterval(tick);p.apply&&p.apply();setBusy(false);remember("agent",raw);speak(raw)}},38)};
+  setTimeout(()=>{const rows=p.steps.map(([n,a])=>toolRow(m,n,n,a));
+    if(p.ask&&S.ask_before_changes){approvalCard(m,{summary:p.ask,detail:p.detail},ok=>{rows.forEach(r=>toolDone(r,ok));if(!ok){p.say="No problem, I left it alone. What would you like instead?";p.apply=null}finish()})}
+    else setTimeout(()=>{rows.forEach(r=>toolDone(r,true));finish()},450)},600)}
+
+/* ---------- boot ---------- */
+(async()=>{
+  try{const c=new AbortController();setTimeout(()=>c.abort(),1500);const h=await (await fetch("/api/health",{signal:c.signal})).json();LIVE=!!h.ok;if(LIVE)$("#ver").textContent="Version "+h.version+"."}catch(e){LIVE=false}
+  if(LIVE){const s=await api("/api/settings");if(!s.error)S={...S,...s}}else S={...S,...store.get("settings",{})};
+  applySettings();welcome();refreshLink();if(LIVE)setInterval(refreshLink,8000);inp.focus();
+})();
+</script>
+</body>
+</html>
