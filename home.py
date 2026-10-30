@@ -20,6 +20,11 @@ DEFAULTS = {
     "read_aloud": False,
     "sounds": True,
     "voice_server": "",
+    # Look: the agent's name, accent color, and when the avatar / wallpaper were last set (0 = none)
+    "agent_name": "Agent",
+    "accent": "#aaa4ff",
+    "avatar_v": 0,
+    "wallpaper_v": 0,
 }
 
 

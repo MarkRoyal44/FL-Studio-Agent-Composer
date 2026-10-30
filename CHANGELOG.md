@@ -2,6 +2,14 @@
 
 All notable changes to Agent Composer. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [0.8.0] - 2026-10-30
+### Added
+- **Settings › Look.** Give your agent a name and an avatar (PNG, JPG, WebP or a small GIF), put your own wallpaper behind the chat, and pick one of six colors. Pictures are shrunk in the window first and saved in `Documents/Agent Composer/Look`, so the plugin window and the desktop window show the same look.
+- Download page on Tech-Ants: [tech-ants.com/hire/agent-composer](https://tech-ants.com/hire/agent-composer).
+
+### Changed
+- **New frosted-glass look.** The chat floats as a see-through pane over a dusk-lavender sky (or your wallpaper), with pill name tags on the agent's messages, light bubbles for yours, rounded Fredoka headings and soft sparkles. Same layout, same controls.
+
 ## [0.7.1] - 2026-10-29
 ### Fixed
 - Clicking Approve twice on a change card no longer garbles the agent's reply. Cards answer once and drop their buttons.

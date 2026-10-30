@@ -26,7 +26,7 @@ import minibrain  # noqa: E402
 import licensing  # noqa: E402
 from ac import send, status  # noqa: E402
 
-VERSION = "0.7.1"
+VERSION = "0.8.0"
 UI = os.path.join(ROOT, "app", "ui")
 PORT = int(os.environ.get("AGENT_COMPOSER_PORT", "47800"))
 
@@ -62,6 +62,45 @@ def answer(rid, ok):
     with open(os.path.join(home.path("state", "approvals"), rid + ".answer.json"), "w", encoding="utf-8") as f:
         json.dump({"approved": bool(ok)}, f)
     return {"ok": True}
+
+
+LOOK = {"avatar": 2 * 1024 * 1024, "wallpaper": 8 * 1024 * 1024}  # largest picture we keep, in bytes
+PICS = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "image/gif": ".gif"}
+
+
+def look_file(which):
+    d = home.path("Look")
+    for ext in PICS.values():
+        f = os.path.join(d, which + ext)
+        if os.path.exists(f):
+            return f
+    return None
+
+
+def set_look(which, data):
+    """Save (or with empty data, remove) the avatar or wallpaper. data is a data: URL from the window."""
+    if which not in LOOK:
+        return {"error": "unknown picture"}
+    old = look_file(which)
+    if old:
+        os.remove(old)
+    if not data:
+        return home.save_settings({which + "_v": 0})
+    head, _, b64 = str(data).partition(",")
+    ctype = head[5:].split(";")[0] if head.startswith("data:") else ""
+    if ctype not in PICS:
+        return {"error": "Use a PNG, JPG, WebP or GIF"}
+    import base64
+    try:
+        raw = base64.b64decode(b64, validate=True)
+    except ValueError:
+        return {"error": "That picture didn't come through"}
+    if len(raw) > LOOK[which]:
+        return {"error": "That picture is too big"}
+    with open(os.path.join(home.path("Look"), which + PICS[ctype]), "wb") as f:
+        f.write(raw)
+    import time
+    return home.save_settings({which + "_v": int(time.time())})
 
 
 def fl(action, params=None, timeout=4.0):
@@ -150,6 +189,11 @@ class Handler(BaseHTTPRequestHandler):
             d = home.path("MIDI")
             files = sorted(((n, os.path.getmtime(os.path.join(d, n))) for n in os.listdir(d) if n.endswith(".mid")), key=lambda x: -x[1])
             return self._json({"folder": d, "files": [{"name": n, "modified": m} for n, m in files]})
+        if p in ("/look/avatar", "/look/wallpaper"):
+            f = look_file(p.rsplit("/", 1)[1])
+            if not f:
+                return self._json({"error": "not set"}, 404)
+            return self._file(f, {v: k for k, v in PICS.items()}[os.path.splitext(f)[1]])
         if p.startswith("/takes/"):
             name = os.path.basename(unquote(p[len("/takes/"):]))
             ext = os.path.splitext(name)[1].lower()
@@ -200,6 +244,8 @@ class Handler(BaseHTTPRequestHandler):
             if "dock_to_fl" in b:
                 dock_window(bool(b["dock_to_fl"]))
             return self._json(r)
+        if p == "/api/look":
+            return self._json(set_look(str(b.get("which", "")), b.get("data", "")))
         if p == "/api/dock-window":
             return self._json(dock_window(bool(b.get("on", True))))
         if p.startswith("/api/approvals/"):

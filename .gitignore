@@ -25,6 +25,7 @@ node_modules/
 # The person's own documents (Mini Brain) and voice takes
 Mini Brain/
 Takes/
+Look/
 
 # Built installer
 dist/
