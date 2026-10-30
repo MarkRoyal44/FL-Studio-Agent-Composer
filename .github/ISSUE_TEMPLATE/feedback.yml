@@ -1,0 +1,27 @@
+name: 💬 General feedback
+description: Anything else on your mind
+labels: ["feedback"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: About
+      options:
+        - "Chat window & how it looks (app/ui)"
+        - "Settings & first setup (app/ui, home.py)"
+        - "AI provider: Claude, Codex, DeepSeek, Ollama (app/brains.py)"
+        - "FL Studio connection & actions (fl/, mcp_server.py)"
+        - "Melodies, chords & MIDI (midifile.py)"
+        - "Mini Brain: your notes & lyrics (minibrain.py)"
+        - "Plugin window inside FL (plugin/)"
+        - "Install, update or uninstall (installer/)"
+        - "License & commercial key (licensing.py)"
+        - "Something else"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Tell us
+    validations:
+      required: true

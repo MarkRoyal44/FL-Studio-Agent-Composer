@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🐜 Send it on tech-ants.com instead
+    url: https://tech-ants.com/feedback?product=agent-composer&from=github
+    about: The same three boxes, no GitHub account needed.
+  - name: 🔒 Security problem
+    url: https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/blob/main/SECURITY.md
+    about: Please don't post security issues publicly. Read SECURITY.md first.

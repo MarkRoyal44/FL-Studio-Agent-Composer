@@ -93,7 +93,7 @@ More detail: [WHITEPAPER.md](WHITEPAPER.md) · [docs/ARCHITECTURE.md](docs/ARCHI
 
 ## Support
 
-Agent Composer is free for producers and small studios. If it saved you a session, tip on Cash App: **[$Mark4949](https://cash.app/$Mark4949)**. A ⭐ on this repo helps other producers find it. Bugs and ideas go in [Issues](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/issues). The same links are in the app under **Settings › ♥ Support**.
+Agent Composer is free for producers and small studios. If it saved you a session, tip on Cash App: **[$Mark4949](https://cash.app/$Mark4949)**. A ⭐ on this repo helps other producers find it. Found a bug or want a feature? Use the three boxes: **[🐞 Bug report](https://tech-ants.com/feedback?product=agent-composer&kind=bug&from=github)** · **[💡 Feature request](https://tech-ants.com/feedback?product=agent-composer&kind=feature&from=github)** · **[💬 Feedback](https://tech-ants.com/feedback?product=agent-composer&kind=feedback&from=github)** (no GitHub account needed), or open a [GitHub issue](https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/issues/new/choose). The same links are in the app under **Settings › ♥ Support**.
 
 ## License
 

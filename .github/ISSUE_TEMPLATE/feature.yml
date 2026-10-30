@@ -1,0 +1,31 @@
+name: 💡 Feature request
+description: Something you wish it did
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        No GitHub account? Use [tech-ants.com/feedback](https://tech-ants.com/feedback?product=agent-composer&kind=feature&from=github).
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part?
+      options:
+        - "Chat window & how it looks (app/ui)"
+        - "Settings & first setup (app/ui, home.py)"
+        - "AI provider: Claude, Codex, DeepSeek, Ollama (app/brains.py)"
+        - "FL Studio connection & actions (fl/, mcp_server.py)"
+        - "Melodies, chords & MIDI (midifile.py)"
+        - "Mini Brain: your notes & lyrics (minibrain.py)"
+        - "Plugin window inside FL (plugin/)"
+        - "Install, update or uninstall (installer/)"
+        - "License & commercial key (licensing.py)"
+        - "Something else"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What should it do, and why would it help your music?
+    validations:
+      required: true

@@ -1,0 +1,61 @@
+name: 🐞 Bug report
+description: Something is broken or acts wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping fix it. Prefer a simple form? Use [tech-ants.com/feedback](https://tech-ants.com/feedback?product=agent-composer&kind=bug&from=github), same thing, no GitHub account needed.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is it broken?
+      options:
+        - "Chat window & how it looks (app/ui)"
+        - "Settings & first setup (app/ui, home.py)"
+        - "AI provider: Claude, Codex, DeepSeek, Ollama (app/brains.py)"
+        - "FL Studio connection & actions (fl/, mcp_server.py)"
+        - "Melodies, chords & MIDI (midifile.py)"
+        - "Mini Brain: your notes & lyrics (minibrain.py)"
+        - "Plugin window inside FL (plugin/)"
+        - "Install, update or uninstall (installer/)"
+        - "License & commercial key (licensing.py)"
+        - "Something else"
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How bad is it?
+      options:
+        - "I can't use it"
+        - "Annoying, but I can work around it"
+        - "Small thing"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What did you do right before it happened?
+      placeholder: |
+        1. Opened FL Studio
+        2. Asked for a kick pattern
+        3. ...
+  - type: textarea
+    id: details
+    attributes:
+      label: What did you expect, and what happened instead?
+      description: Paste any error text here too.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Agent Composer version
+      description: Settings › About shows it.
+      placeholder: "0.8.0"
+  - type: input
+    id: setup
+    attributes:
+      label: Windows and FL Studio version
+      placeholder: "Windows 11, FL Studio 2024"

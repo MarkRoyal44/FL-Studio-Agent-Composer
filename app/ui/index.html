@@ -463,7 +463,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <p class="note">Free for you, your beats and your studio: anyone with fewer than 100 people and under $1M a year in revenue uses it free, for money or for fun (PolyForm Small Business license). If it saved you a session, a tip keeps it growing.</p>
       <a class="card donate" id="donate" target="_blank" rel="noopener"><span style="font-size:20px">💸</span><span class="grow"><b>Tip on Cash App</b><small id="donateTag"></small></span><span aria-hidden="true">›</span></a>
       <a class="card" href="https://github.com/MarkRoyal44/FL-Studio-Agent-Composer" target="_blank" rel="noopener"><span style="font-size:20px">⭐</span><span class="grow"><b>Star it on GitHub</b><small>Free, and it helps other producers find it</small></span><span aria-hidden="true">›</span></a>
-      <a class="card" href="https://github.com/MarkRoyal44/FL-Studio-Agent-Composer/issues/new" target="_blank" rel="noopener"><span style="font-size:20px">🐞</span><span class="grow"><b>Report a bug or ask for a feature</b><small>Opens a GitHub issue</small></span><span aria-hidden="true">›</span></a>
+      <a class="card" data-fb="bug" href="https://tech-ants.com/feedback?product=agent-composer&from=app&kind=bug" target="_blank" rel="noopener"><span style="font-size:20px">🐞</span><span class="grow"><b>Report a bug</b><small>Pick where it broke, so it gets fixed fast</small></span><span aria-hidden="true">›</span></a>
+      <a class="card" data-fb="feature" href="https://tech-ants.com/feedback?product=agent-composer&from=app&kind=feature" target="_blank" rel="noopener"><span style="font-size:20px">💡</span><span class="grow"><b>Request a feature</b><small>Tell us what it should do next</small></span><span aria-hidden="true">›</span></a>
+      <a class="card" data-fb="feedback" href="https://tech-ants.com/feedback?product=agent-composer&from=app&kind=feedback" target="_blank" rel="noopener"><span style="font-size:20px">💬</span><span class="grow"><b>Send feedback</b><small>Anything else on your mind</small></span><span aria-hidden="true">›</span></a>
       <h3>Commercial license</h3>
       <p class="note" id="licNote">Bigger than that? A company with 100+ people or $1M+ a year needs a commercial license. Pay on Cash App with your company name and how to reach you in the note, and you'll get a code. Paste it here.</p>
       <div class="keyrow" id="licRow"><input type="text" id="licTxt" placeholder="Paste your code (AC1.…)" autocomplete="off" spellcheck="false" aria-label="License code"><button class="btn" id="licSave">Unlock</button></div>
@@ -824,7 +826,7 @@ function runDemo(text){setBusy(true);const p=plan(text),m=agentMsg(),dots=typing
 
 /* ---------- boot ---------- */
 (async()=>{
-  try{const c=new AbortController();setTimeout(()=>c.abort(),1500);const h=await (await fetch("/api/health",{signal:c.signal})).json();LIVE=!!h.ok;if(LIVE)$("#ver").textContent="Version "+h.version+"."}catch(e){LIVE=false}
+  try{const c=new AbortController();setTimeout(()=>c.abort(),1500);const h=await (await fetch("/api/health",{signal:c.signal})).json();LIVE=!!h.ok;if(LIVE){$("#ver").textContent="Version "+h.version+".";$$("[data-fb]").forEach(x=>x.href+="&v="+encodeURIComponent(h.version))}}catch(e){LIVE=false}
   if(LIVE){const s=await api("/api/settings");if(!s.error)S={...S,...s}}else S={...S,...store.get("settings",{})};
   applySettings();welcome();refreshLink();if(LIVE)setInterval(refreshLink,8000);inp.focus();
   if(!store.get("seen_start",false)){store.set("seen_start",true);openSet("start")}
