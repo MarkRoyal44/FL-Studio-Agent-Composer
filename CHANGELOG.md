@@ -2,6 +2,11 @@
 
 All notable changes to Agent Composer. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [0.8.1] - 2026-10-30
+### Added
+- **Three feedback boxes.** Settings › ♥ Support now has Report a bug, Request a feature and Send feedback. Each opens [tech-ants.com/feedback](https://tech-ants.com/feedback?product=agent-composer) with your version filled in, and asks where it broke (chat, FL connection, MIDI, plugin, install…) so a fix starts in the right file. No GitHub account needed.
+- GitHub issue forms for the same three boxes, sorted by the same areas.
+
 ## [0.8.0] - 2026-10-30
 ### Added
 - **Settings › Look.** Give your agent a name and an avatar (PNG, JPG, WebP or a small GIF), put your own wallpaper behind the chat, and pick one of six colors. Pictures are shrunk in the window first and saved in `Documents/Agent Composer/Look`, so the plugin window and the desktop window show the same look.
